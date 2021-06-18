@@ -36,6 +36,7 @@ import org.apache.pulsar.functions.auth.FunctionAuthProvider;
 import org.apache.pulsar.functions.instance.AuthenticationConfig;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.Function.Assignment;
+import org.apache.pulsar.functions.proto.Function.FunctionDetails.ComponentType;
 import org.apache.pulsar.functions.runtime.RuntimeCustomizer;
 import org.apache.pulsar.functions.runtime.RuntimeFactory;
 import org.apache.pulsar.functions.runtime.RuntimeSpawner;
@@ -130,10 +131,10 @@ public class FunctionRuntimeManager implements AutoCloseable{
     private final FunctionMetaDataManager functionMetaDataManager;
 
     private final ErrorNotifier errorNotifier;
-    
+
     public FunctionRuntimeManager(WorkerConfig workerConfig, WorkerService workerService, Namespace dlogNamespace,
-                                  MembershipManager membershipManager, ConnectorsManager connectorsManager, FunctionsManager functionsManager,
-                                  FunctionMetaDataManager functionMetaDataManager, ErrorNotifier errorNotifier) throws Exception {
+            MembershipManager membershipManager, ConnectorsManager connectorsManager, FunctionsManager functionsManager,
+            FunctionMetaDataManager functionMetaDataManager, ErrorNotifier errorNotifier) throws Exception {
         this.workerConfig = workerConfig;
         this.workerService = workerService;
         this.functionAdmin = workerService.getFunctionAdmin();
@@ -145,7 +146,7 @@ public class FunctionRuntimeManager implements AutoCloseable{
             secretsProviderConfigurator = new DefaultSecretsProviderConfigurator();
         }
         log.info("Initializing secrets provider configurator {} with configs: {}",
-          secretsProviderConfigurator.getClass().getName(), workerConfig.getSecretsProviderConfiguratorConfig());
+                secretsProviderConfigurator.getClass().getName(), workerConfig.getSecretsProviderConfiguratorConfig());
         secretsProviderConfigurator.init(workerConfig.getSecretsProviderConfiguratorConfig());
 
         Optional<FunctionAuthProvider> functionAuthProvider = Optional.empty();
@@ -275,7 +276,7 @@ public class FunctionRuntimeManager implements AutoCloseable{
      * @return the assignment of the function
      */
     public synchronized Assignment findFunctionAssignment(String tenant, String namespace,
-                                                          String functionName, int instanceId) {
+            String functionName, int instanceId) {
         return this.findAssignment(tenant, namespace, functionName, instanceId);
     }
 
@@ -287,13 +288,13 @@ public class FunctionRuntimeManager implements AutoCloseable{
      * @return
      */
     public synchronized Collection<Assignment> findFunctionAssignments(String tenant,
-                                                                       String namespace, String functionName) {
+            String namespace, String functionName) {
         return findFunctionAssignments(tenant, namespace, functionName, this.workerIdToAssignments);
     }
 
     public static Collection<Assignment> findFunctionAssignments(String tenant,
-                                                                 String namespace, String functionName,
-                                                                 Map<String, Map<String, Assignment>> workerIdToAssignments) {
+            String namespace, String functionName,
+            Map<String, Map<String, Assignment>> workerIdToAssignments) {
 
         Collection<Assignment> assignments = new LinkedList<>();
 
@@ -404,7 +405,15 @@ public class FunctionRuntimeManager implements AutoCloseable{
                             .type(MediaType.APPLICATION_JSON)
                             .entity(new ErrorData(fullFunctionName + " has not been assigned yet")).build());
                 }
-                this.functionAdmin.functions().restartFunction(tenant, namespace, functionName);
+                ComponentType componentType = assignment.getInstance().getFunctionMetaData().getFunctionDetails().getComponentType();
+
+                if (ComponentType.SOURCE == componentType) {
+                    this.functionAdmin.sources().restartSource(tenant, namespace, functionName);
+                } else if (ComponentType.SINK == componentType) {
+                    this.functionAdmin.sinks().restartSink(tenant, namespace, functionName);
+                } else {
+                    this.functionAdmin.functions().restartFunction(tenant, namespace, functionName);
+                }
             }
         } else {
             for (Assignment assignment : assignments) {
@@ -427,8 +436,20 @@ public class FunctionRuntimeManager implements AutoCloseable{
                         }
                         continue;
                     }
-                    this.functionAdmin.functions().restartFunction(tenant, namespace, functionName,
+
+                    ComponentType componentType = assignment.getInstance().getFunctionMetaData().getFunctionDetails().getComponentType();
+
+                    if (ComponentType.SOURCE == componentType) {
+                        this.functionAdmin.sources().restartSource(tenant, namespace, functionName,
                                 assignment.getInstance().getInstanceId());
+                    } else if (ComponentType.SINK == componentType) {
+                        this.functionAdmin.sinks().restartSink(tenant, namespace, functionName,
+                                assignment.getInstance().getInstanceId());
+                    } else {
+                        this.functionAdmin.functions().restartFunction(tenant, namespace, functionName,
+                                assignment.getInstance().getInstanceId());
+                    }
+
                 }
             }
         }
@@ -487,7 +508,7 @@ public class FunctionRuntimeManager implements AutoCloseable{
      * @return jsonObject containing stats for instance
      */
     public FunctionStats.FunctionInstanceStats.FunctionInstanceStatsData getFunctionInstanceStats(String tenant, String namespace,
-                                                                        String functionName, int instanceId, URI uri) {
+            String functionName, int instanceId, URI uri) {
         Assignment assignment;
         if (runtimeFactory.externallyManaged()) {
             assignment = this.findAssignment(tenant, namespace, functionName, -1);

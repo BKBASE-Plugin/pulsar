@@ -103,7 +103,7 @@ import static org.apache.pulsar.functions.utils.FunctionCommon.roundDecimal;
 public class KubernetesRuntime implements Runtime {
 
     private static final String ENV_SHARD_ID = "SHARD_ID";
-    private static final int maxJobNameSize = 55;
+    private static final int maxJobNameSize = 52;
     public static final Pattern VALID_POD_NAME_REGEX =
             Pattern.compile("[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*",
                     Pattern.CASE_INSENSITIVE);
@@ -149,37 +149,37 @@ public class KubernetesRuntime implements Runtime {
     private final Optional<KubernetesManifestCustomizer> manifestCustomizer;
 
     KubernetesRuntime(AppsV1Api appsClient,
-                      CoreV1Api coreClient,
-                      String jobNamespace,
-                      Map<String, String> customLabels,
-                      Boolean installUserCodeDependencies,
-                      String pythonDependencyRepository,
-                      String pythonExtraDependencyRepository,
-                      String pulsarDockerImageName,
-                      String imagePullPolicy,
-                      String pulsarRootDir,
-                      InstanceConfig instanceConfig,
-                      String instanceFile,
-                      String extraDependenciesDir,
-                      String logDirectory,
-                      String configAdminCLI,
-                      String userCodePkgUrl,
-                      String originalCodeFileName,
-                      String pulsarServiceUrl,
-                      String pulsarAdminUrl,
-                      String stateStorageServiceUrl,
-                      AuthenticationConfig authConfig,
-                      SecretsProviderConfigurator secretsProviderConfigurator,
-                      Integer expectedMetricsCollectionInterval,
-                      int percentMemoryPadding,
-                      double cpuOverCommitRatio,
-                      double memoryOverCommitRatio,
-                      Optional<KubernetesFunctionAuthProvider> functionAuthDataCacheProvider,
-                      boolean authenticationEnabled,
-                      Integer grpcPort,
-                      Integer metricsPort,
-                      String narExtractionDirectory,
-                      Optional<KubernetesManifestCustomizer> manifestCustomizer) throws Exception {
+            CoreV1Api coreClient,
+            String jobNamespace,
+            Map<String, String> customLabels,
+            Boolean installUserCodeDependencies,
+            String pythonDependencyRepository,
+            String pythonExtraDependencyRepository,
+            String pulsarDockerImageName,
+            String imagePullPolicy,
+            String pulsarRootDir,
+            InstanceConfig instanceConfig,
+            String instanceFile,
+            String extraDependenciesDir,
+            String logDirectory,
+            String configAdminCLI,
+            String userCodePkgUrl,
+            String originalCodeFileName,
+            String pulsarServiceUrl,
+            String pulsarAdminUrl,
+            String stateStorageServiceUrl,
+            AuthenticationConfig authConfig,
+            SecretsProviderConfigurator secretsProviderConfigurator,
+            Integer expectedMetricsCollectionInterval,
+            int percentMemoryPadding,
+            double cpuOverCommitRatio,
+            double memoryOverCommitRatio,
+            Optional<KubernetesFunctionAuthProvider> functionAuthDataCacheProvider,
+            boolean authenticationEnabled,
+            Integer grpcPort,
+            Integer metricsPort,
+            String narExtractionDirectory,
+            Optional<KubernetesManifestCustomizer> manifestCustomizer) throws Exception {
         this.appsClient = appsClient;
         this.coreClient = coreClient;
         this.instanceConfig = instanceConfig;
@@ -1058,15 +1058,15 @@ public class KubernetesRuntime implements Runtime {
     }
 
     private static String createJobName(String tenant, String namespace, String functionName) {
-        final String jobNameContent = String.format("%s-%s-%s", tenant, namespace,functionName);
-        final String jobName = "pf-" + jobNameContent;
-        final String convertedJobName = toValidPodName(jobName);
-        if (jobName.equals(convertedJobName)) {
-            return jobName;
+        final String jobNameContent =functionName.toLowerCase();
+        final String convertedJobName = toValidPodName("pf-" + jobNameContent);
+        if (convertedJobName.length() < maxJobNameSize) {
+            return convertedJobName;
         }
+
         // toValidPodName may cause naming collisions, add a short hash here to avoid it
-        final String shortHash = DigestUtils.sha1Hex(jobNameContent).toLowerCase().substring(0, 8);
-        return convertedJobName + "-" + shortHash;
+        final String shortHash = DigestUtils.sha1Hex(jobNameContent).substring(0, 8);
+        return convertedJobName.substring(0, (maxJobNameSize - 8)) + shortHash;
     }
 
     private static String getServiceUrl(String jobName, String jobNamespace, int instanceId) {
