@@ -70,7 +70,6 @@ public class WorkerService {
     private PulsarAdmin brokerAdmin;
     private PulsarAdmin functionAdmin;
     private final MetricsGenerator metricsGenerator;
-    private final ScheduledExecutorService executor;
     @VisibleForTesting
     private URI dlogUri;
 
@@ -78,15 +77,14 @@ public class WorkerService {
         this.workerConfig = workerConfig;
         this.statsUpdater = Executors
                 .newSingleThreadScheduledExecutor(new DefaultThreadFactory("worker-stats-updater"));
-        this.executor = Executors.newScheduledThreadPool(10, new DefaultThreadFactory("pulsar-worker"));
         this.metricsGenerator = new MetricsGenerator(this.statsUpdater, workerConfig);
     }
 
 
     public void start(URI dlogUri,
-                      AuthenticationService authenticationService,
-                      AuthorizationService authorizationService,
-                      ErrorNotifier errorNotifier) throws InterruptedException {
+            AuthenticationService authenticationService,
+            AuthorizationService authorizationService,
+            ErrorNotifier errorNotifier) throws InterruptedException {
         log.info("Starting worker {}...", workerConfig.getWorkerId());
 
         try {
@@ -137,14 +135,14 @@ public class WorkerService {
                 }
 
                 this.brokerAdmin = WorkerUtils.getPulsarAdminClient(workerConfig.getPulsarWebServiceUrl(),
-                    workerConfig.getClientAuthenticationPlugin(), workerConfig.getClientAuthenticationParameters(),
-                    pulsarClientTlsTrustCertsFilePath, workerConfig.isTlsAllowInsecureConnection(),
-                    workerConfig.isTlsHostnameVerificationEnable());
+                        workerConfig.getClientAuthenticationPlugin(), workerConfig.getClientAuthenticationParameters(),
+                        pulsarClientTlsTrustCertsFilePath, workerConfig.isTlsAllowInsecureConnection(),
+                        workerConfig.isTlsHostnameVerificationEnable());
 
                 this.functionAdmin = WorkerUtils.getPulsarAdminClient(functionWebServiceUrl,
-                    workerConfig.getClientAuthenticationPlugin(), workerConfig.getClientAuthenticationParameters(),
-                    workerConfig.getTlsTrustCertsFilePath(), workerConfig.isTlsAllowInsecureConnection(),
-                    workerConfig.isTlsHostnameVerificationEnable());
+                        workerConfig.getClientAuthenticationPlugin(), workerConfig.getClientAuthenticationParameters(),
+                        workerConfig.getTlsTrustCertsFilePath(), workerConfig.isTlsAllowInsecureConnection(),
+                        workerConfig.isTlsHostnameVerificationEnable());
 
                 this.client = WorkerUtils.getPulsarClient(this.workerConfig.getPulsarServiceUrl(),
                         workerConfig.getClientAuthenticationPlugin(),
@@ -164,8 +162,7 @@ public class WorkerService {
             brokerAdmin.topics().createNonPartitionedTopic(workerConfig.getClusterCoordinationTopic());
             brokerAdmin.topics().createNonPartitionedTopic(workerConfig.getFunctionMetadataTopic());
             //create scheduler manager
-            this.schedulerManager = new SchedulerManager(this.workerConfig, this.client, this.brokerAdmin,
-                    this.executor);
+            this.schedulerManager = new SchedulerManager(this.workerConfig, this.client, this.brokerAdmin);
 
             //create function meta data manager
             this.functionMetaDataManager = new FunctionMetaDataManager(
@@ -213,11 +210,34 @@ public class WorkerService {
                     this.workerConfig.getWorkerId(),
                     membershipManager);
 
-            this.clusterServiceCoordinator.addTask("membership-monitor",
-                    this.workerConfig.getFailureCheckFreqMs(),
-                    () -> membershipManager.checkFailures(
-                            functionMetaDataManager, functionRuntimeManager, schedulerManager));
+            clusterServiceCoordinator.addTask("membership-monitor",
+                    workerConfig.getFailureCheckFreqMs(),
+                    () -> {
+                        // computing a new schedule and checking for failures cannot happen concurrently
+                        // both paths of code modify internally cached assignments map in function runtime manager
+                        try {
+                            schedulerManager.getSchedulerLock().lock();
+                            membershipManager.checkFailures(
+                                    functionMetaDataManager, functionRuntimeManager, schedulerManager);
+                        } finally {
+                            schedulerManager.getSchedulerLock().unlock();
+                        }
+                    });
 
+            if (workerConfig.getRebalanceCheckFreqSec() > 0) {
+                clusterServiceCoordinator.addTask("rebalance-periodic-check",
+                        workerConfig.getRebalanceCheckFreqSec() * 1000,
+                        () -> {
+                            try {
+                                schedulerManager.rebalanceIfNotInprogress().get();
+                            } catch (SchedulerManager.RebalanceInProgressException e) {
+                                log.info("Scheduled for rebalance but rebalance is already in progress. Ignoring.");
+                            } catch (Exception e) {
+                                log.warn("Encountered error when running scheduled rebalance", e);
+                            }
+                        });
+            }
+            log.info("/** Starting Cluster Service Coordinator **/");
             this.clusterServiceCoordinator.start();
 
             // Start function runtime manager
@@ -225,6 +245,7 @@ public class WorkerService {
 
             // indicate function worker service is done initializing
             this.isInitialized = true;
+            log.info("/** Started worker id={} **/", workerConfig.getWorkerId());
         } catch (Throwable t) {
             log.error("Error Starting up in worker", t);
             throw new RuntimeException(t);
@@ -284,10 +305,6 @@ public class WorkerService {
 
         if (null != this.dlogNamespace) {
             this.dlogNamespace.close();
-        }
-
-        if(this.executor != null) {
-            this.executor.shutdown();
         }
 
         if (this.statsUpdater != null) {

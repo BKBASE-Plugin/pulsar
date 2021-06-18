@@ -50,7 +50,9 @@ import org.apache.logging.log4j.ThreadContext;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.pulsar.client.api.ClientBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
+import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.client.impl.PulsarClientImpl;
@@ -86,6 +88,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * A function container implemented using java thread.
@@ -98,10 +101,12 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
     private final String jarFile;
 
     // input topic consumer & output topic producer
-    private final PulsarClientImpl client;
+    private PulsarClientImpl client;
 
     private LogAppender logAppender;
 
+    private final String pulsarServiceUrl;
+    private final AuthenticationConfig authConfig;
     // provide tables for storing states
     private final String stateStorageServiceUrl;
     private StorageClient storageClient;
@@ -135,17 +140,19 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
     private String narExtractionDirectory;
 
     public JavaInstanceRunnable(InstanceConfig instanceConfig,
-                                FunctionCacheManager fnCache,
-                                String jarFile,
-                                PulsarClient pulsarClient,
-                                String stateStorageServiceUrl,
-                                SecretsProvider secretsProvider,
-                                CollectorRegistry collectorRegistry,
-                                String narExtractionDirectory) {
+            FunctionCacheManager fnCache,
+            String jarFile,
+            String pulsarServiceUrl,
+            AuthenticationConfig authConfig,
+            String stateStorageServiceUrl,
+            SecretsProvider secretsProvider,
+            CollectorRegistry collectorRegistry,
+            String narExtractionDirectory) {
         this.instanceConfig = instanceConfig;
         this.fnCache = fnCache;
         this.jarFile = jarFile;
-        this.client = (PulsarClientImpl) pulsarClient;
+        this.pulsarServiceUrl = pulsarServiceUrl;
+        this.authConfig = authConfig;
         this.stateStorageServiceUrl = stateStorageServiceUrl;
         this.secretsProvider = secretsProvider;
         this.collectorRegistry = collectorRegistry;
@@ -194,7 +201,7 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
         ThreadContext.put("instance", instanceConfig.getInstanceName());
 
         log.info("Starting Java Instance {} : \n Details = {}",
-            instanceConfig.getFunctionDetails().getName(), instanceConfig.getFunctionDetails());
+                instanceConfig.getFunctionDetails().getName(), instanceConfig.getFunctionDetails());
 
         // start the function thread
         functionClassLoader = loadJars();
@@ -214,6 +221,7 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
         if (!(object instanceof Function) && !(object instanceof java.util.function.Function)) {
             throw new RuntimeException("User class must either be Function or java.util.Function");
         }
+        setupPulsarClient();
 
         // start the state table
         setupStateTable();
@@ -244,7 +252,7 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
     public void run() {
         try {
             setup();
-            
+
             while (true) {
                 currentRecord = readInput();
 
@@ -306,9 +314,9 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
             log.info("Load JAR: {}", jarFile);
             // Let's first try to treat it as a nar archive
             fnCache.registerFunctionInstanceWithArchive(
-                instanceConfig.getFunctionId(),
-                instanceConfig.getInstanceName(),
-                jarFile, narExtractionDirectory);
+                    instanceConfig.getFunctionId(),
+                    instanceConfig.getInstanceName(),
+                    jarFile, narExtractionDirectory);
         } catch (FileNotFoundException e) {
             // create the function class loader
             fnCache.registerFunctionInstance(
@@ -331,13 +339,13 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
 
     private void createStateTable(String tableNs, String tableName, StorageClientSettings settings) throws Exception {
         try (StorageAdminClient storageAdminClient = StorageClientBuilder.newBuilder()
-            .withSettings(settings)
-            .buildAdmin()) {
+                .withSettings(settings)
+                .buildAdmin()) {
             StreamConfiguration streamConf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setInitialNumRanges(4)
-                .setMinNumRanges(4)
-                .setStorageType(StorageType.TABLE)
-                .build();
+                    .setInitialNumRanges(4)
+                    .setMinNumRanges(4)
+                    .setStorageType(StorageType.TABLE)
+                    .build();
             Stopwatch elapsedWatch = Stopwatch.createStarted();
             while (elapsedWatch.elapsed(TimeUnit.MINUTES) < 1) {
                 try {
@@ -346,8 +354,8 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
                 } catch (NamespaceNotFoundException nnfe) {
                     try {
                         result(storageAdminClient.createNamespace(tableNs, NamespaceConfiguration.newBuilder()
-                            .setDefaultStreamConf(streamConf)
-                            .build()));
+                                .setDefaultStreamConf(streamConf)
+                                .build()));
                         result(storageAdminClient.createStream(tableNs, tableName, streamConf));
                     } catch (Exception e) {
                         // there might be two clients conflicting at creating table, so let's retrieve the table again
@@ -362,7 +370,7 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
                     }
                 } catch (ClientException ce) {
                     log.warn("Encountered issue {} on fetching state stable metadata, re-attempting in 100 milliseconds",
-                        ce.getMessage());
+                            ce.getMessage());
                     TimeUnit.MILLISECONDS.sleep(100);
                 }
             }
@@ -375,8 +383,8 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
         }
 
         String tableNs = FunctionCommon.getStateNamespace(
-            instanceConfig.getFunctionDetails().getTenant(),
-            instanceConfig.getFunctionDetails().getNamespace()
+                instanceConfig.getFunctionDetails().getTenant(),
+                instanceConfig.getFunctionDetails().getNamespace()
         );
         String tableName = instanceConfig.getFunctionDetails().getName();
 
@@ -385,10 +393,10 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
                 .clientName("function-" + tableNs + "/" + tableName)
                 // configure a maximum 2 minutes jitter backoff for accessing table service
                 .backoffPolicy(Jitter.of(
-                    Type.EXPONENTIAL,
-                    100,
-                    2000,
-                    60
+                        Type.EXPONENTIAL,
+                        100,
+                        2000,
+                        60
                 ))
                 .build();
 
@@ -409,14 +417,32 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
                 break;
             } catch (InternalServerException ise) {
                 log.warn("Encountered internal server on opening table '{}', re-attempt in 100 milliseconds : {}",
-                    tableName, ise.getMessage());
+                        tableName, ise.getMessage());
                 TimeUnit.MILLISECONDS.sleep(100);
             }
         }
     }
 
+    private void setupPulsarClient() throws Exception {
+        if (isNotBlank(pulsarServiceUrl)) {
+            ClientBuilder clientBuilder = PulsarClient.builder().serviceUrl(pulsarServiceUrl);
+            if (authConfig != null) {
+                if (isNotBlank(authConfig.getClientAuthenticationPlugin())
+                        && isNotBlank(authConfig.getClientAuthenticationParameters())) {
+                    clientBuilder.authentication(authConfig.getClientAuthenticationPlugin(),
+                            authConfig.getClientAuthenticationParameters());
+                }
+                clientBuilder.enableTls(authConfig.isUseTls());
+                clientBuilder.allowTlsInsecureConnection(authConfig.isTlsAllowInsecureConnection());
+                clientBuilder.enableTlsHostnameVerification(authConfig.isTlsHostnameVerificationEnable());
+                clientBuilder.tlsTrustCertsFilePath(authConfig.getTlsTrustCertsFilePath());
+            }
+            this.client = (PulsarClientImpl) clientBuilder.build();
+        }
+    }
+
     private void processResult(Record srcRecord,
-                               CompletableFuture<JavaExecutionResult> result) throws Exception {
+            CompletableFuture<JavaExecutionResult> result) throws Exception {
         result.whenComplete((result1, throwable) -> {
             if (throwable != null || result1.getUserException() != null) {
                 Throwable t = throwable != null ? throwable : result1.getUserException();
@@ -523,6 +549,15 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
             javaInstance = null;
         }
 
+        if (null != client) {
+            client.closeAsync()
+                    .exceptionally(cause -> {
+                        log.warn("Failed to close pulsar client", cause);
+                        return null;
+                    });
+            client = null;
+        }
+
         // kill the state table
         if (null != stateTable) {
             stateTable.close();
@@ -530,10 +565,10 @@ public class JavaInstanceRunnable implements AutoCloseable, Runnable {
         }
         if (null != storageClient) {
             storageClient.closeAsync()
-                .exceptionally(cause -> {
-                    log.warn("Failed to close state storage client", cause);
-                    return null;
-                });
+                    .exceptionally(cause -> {
+                        log.warn("Failed to close state storage client", cause);
+                        return null;
+                    });
             storageClient = null;
         }
 

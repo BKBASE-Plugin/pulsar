@@ -83,23 +83,23 @@ public class WorkerConfig implements Serializable, PulsarConfiguration {
     private static final String CATEGORY_FUNCTIONS = "Functions";
 
     @FieldContext(
-        category = CATEGORY_WORKER,
-        doc = "Id to identify a worker instance"
+            category = CATEGORY_WORKER,
+            doc = "Id to identify a worker instance"
     )
     private String workerId;
     @FieldContext(
-        category = CATEGORY_WORKER,
-        doc = "Hostname of the worker instance"
+            category = CATEGORY_WORKER,
+            doc = "Hostname of the worker instance"
     )
     private String workerHostname;
     @FieldContext(
-        category = CATEGORY_WORKER,
-        doc = "The port for serving worker http requests"
+            category = CATEGORY_WORKER,
+            doc = "The port for serving worker http requests"
     )
     private Integer workerPort;
     @FieldContext(
-        category = CATEGORY_WORKER,
-        doc = "The port for serving worker https requests"
+            category = CATEGORY_WORKER,
+            doc = "The port for serving worker https requests"
     )
     private Integer workerPortTls;
     @FieldContext(
@@ -114,12 +114,12 @@ public class WorkerConfig implements Serializable, PulsarConfiguration {
     )
     private boolean includeStandardPrometheusMetrics = false;
     @FieldContext(
-        category = CATEGORY_WORKER,
-        doc = "Classname of Pluggable JVM GC metrics logger that can log GC specific metrics")
+            category = CATEGORY_WORKER,
+            doc = "Classname of Pluggable JVM GC metrics logger that can log GC specific metrics")
     private String jvmGCMetricsLoggerClassName;
     @FieldContext(
-        category = CATEGORY_WORKER,
-        doc = "Number of threads to use for HTTP requests processing"
+            category = CATEGORY_WORKER,
+            doc = "Number of threads to use for HTTP requests processing"
     )
     private int numHttpServerThreads = 8;
     @FieldContext(
@@ -141,16 +141,16 @@ public class WorkerConfig implements Serializable, PulsarConfiguration {
     @FieldContext(
             category = CATEGORY_WORKER,
             doc = "ZooKeeper cache expiry time in seconds"
-        )
+    )
     private int zooKeeperCacheExpirySeconds = 300;
     @FieldContext(
-        category = CATEGORY_CONNECTORS,
-        doc = "The path to the location to locate builtin connectors"
+            category = CATEGORY_CONNECTORS,
+            doc = "The path to the location to locate builtin connectors"
     )
     private String connectorsDirectory = "./connectors";
     @FieldContext(
-        category = CATEGORY_CONNECTORS,
-        doc = "The directory where nar packages are extractors"
+            category = CATEGORY_CONNECTORS,
+            doc = "The directory where nar packages are extractors"
     )
     private String narExtractionDirectory = NarClassLoader.DEFAULT_NAR_EXTRACTION_DIR;
     @FieldContext(
@@ -159,190 +159,195 @@ public class WorkerConfig implements Serializable, PulsarConfiguration {
     )
     private Boolean validateConnectorConfig = false;
     @FieldContext(
-        category = CATEGORY_FUNCTIONS,
-        doc = "The path to the location to locate builtin functions"
+            category = CATEGORY_FUNCTIONS,
+            doc = "The path to the location to locate builtin functions"
     )
     private String functionsDirectory = "./functions";
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The pulsar topic used for storing function metadata"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The pulsar topic used for storing function metadata"
     )
     private String functionMetadataTopicName;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The web service url for function workers"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The web service url for function workers"
     )
     private String functionWebServiceUrl;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The pulser binary service url that function metadata manager talks to"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The pulser binary service url that function metadata manager talks to"
     )
     private String pulsarServiceUrl;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The pulsar web service url that function metadata manager talks to"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The pulsar web service url that function metadata manager talks to"
     )
     private String pulsarWebServiceUrl;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The pulsar topic used for cluster coordination"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The pulsar topic used for cluster coordination"
     )
     private String clusterCoordinationTopicName;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The pulsar namespace for storing metadata topics"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The pulsar namespace for storing metadata topics"
     )
     private String pulsarFunctionsNamespace;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The pulsar cluster name. Used for creating pulsar namespace during worker initialization"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The pulsar cluster name. Used for creating pulsar namespace during worker initialization"
     )
     private String pulsarFunctionsCluster;
     @FieldContext(
-        category = CATEGORY_FUNC_PKG,
-        doc = "The number of replicas for storing functions"
+            category = CATEGORY_FUNC_PKG,
+            doc = "The number of replicas for storing functions"
     )
     private int numFunctionPackageReplicas;
     @FieldContext(
-        category = CATEGORY_FUNC_RUNTIME_MNG,
-        doc = "The directory to download functions by runtime manager"
+            category = CATEGORY_FUNC_RUNTIME_MNG,
+            doc = "The directory to download functions by runtime manager"
     )
     private String downloadDirectory;
     @FieldContext(
-        category = CATEGORY_STATE,
-        doc = "The service url of state storage"
+            category = CATEGORY_STATE,
+            doc = "The service url of state storage"
     )
     private String stateStorageServiceUrl;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The pulsar topic used for storing function assignment informations"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The pulsar topic used for storing function assignment informations"
     )
     private String functionAssignmentTopicName;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The scheduler class used by assigning functions to workers"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The scheduler class used by assigning functions to workers"
     )
     private String schedulerClassName;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The frequency of failure checks, in milliseconds"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The frequency of failure checks, in milliseconds"
     )
     private long failureCheckFreqMs;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The reschedule timeout of function assignment, in milliseconds"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The reschedule timeout of function assignment, in milliseconds"
     )
     private long rescheduleTimeoutMs;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The max number of retries for initial broker reconnects when function metadata manager"
-            + " tries to create producer on metadata topics"
+            category = CATEGORY_FUNC_RUNTIME_MNG,
+            doc = "The frequency to check whether the cluster needs rebalancing"
+    )
+    private long rebalanceCheckFreqSec;
+    @FieldContext(
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The max number of retries for initial broker reconnects when function metadata manager"
+                    + " tries to create producer on metadata topics"
     )
     private int initialBrokerReconnectMaxRetries;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "The max number of retries for writing assignment to assignment topic"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "The max number of retries for writing assignment to assignment topic"
     )
     private int assignmentWriteMaxRetries;
     @FieldContext(
-        category = CATEGORY_FUNC_RUNTIME_MNG,
-        doc = "The frequency of instance liveness check, in milliseconds"
+            category = CATEGORY_FUNC_RUNTIME_MNG,
+            doc = "The frequency of instance liveness check, in milliseconds"
     )
     private long instanceLivenessCheckFreqMs;
     @FieldContext(
-        category = CATEGORY_CLIENT_SECURITY,
-        doc = "The authentication plugin used by function workers to talk to brokers"
+            category = CATEGORY_CLIENT_SECURITY,
+            doc = "The authentication plugin used by function workers to talk to brokers"
     )
     private String clientAuthenticationPlugin;
     @FieldContext(
-        category = CATEGORY_CLIENT_SECURITY,
-        doc = "The parameters of the authentication plugin used by function workers to talk to brokers"
+            category = CATEGORY_CLIENT_SECURITY,
+            doc = "The parameters of the authentication plugin used by function workers to talk to brokers"
     )
     private String clientAuthenticationParameters;
     @FieldContext(
-        category = CATEGORY_CLIENT_SECURITY,
-        doc = "Authentication plugin to use when connecting to bookies"
+            category = CATEGORY_CLIENT_SECURITY,
+            doc = "Authentication plugin to use when connecting to bookies"
     )
     private String bookkeeperClientAuthenticationPlugin;
     @FieldContext(
-        category = CATEGORY_CLIENT_SECURITY,
-        doc = "BookKeeper auth plugin implementatation specifics parameters name and values"
+            category = CATEGORY_CLIENT_SECURITY,
+            doc = "BookKeeper auth plugin implementatation specifics parameters name and values"
     )
     private String bookkeeperClientAuthenticationParametersName;
     @FieldContext(
-        category = CATEGORY_CLIENT_SECURITY,
-        doc = "Parameters for bookkeeper auth plugin"
+            category = CATEGORY_CLIENT_SECURITY,
+            doc = "Parameters for bookkeeper auth plugin"
     )
     private String bookkeeperClientAuthenticationParameters;
     @FieldContext(
-        category = CATEGORY_FUNC_METADATA_MNG,
-        doc = "Frequency how often worker performs compaction on function-topics, in seconds"
+            category = CATEGORY_FUNC_METADATA_MNG,
+            doc = "Frequency how often worker performs compaction on function-topics, in seconds"
     )
     private long topicCompactionFrequencySec = 30 * 60; // 30 minutes
     /***** --- TLS --- ****/
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Enable TLS"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Enable TLS"
     )
     @Deprecated
     private boolean tlsEnabled = false;
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Path for the TLS certificate file"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Path for the TLS certificate file"
     )
     private String tlsCertificateFilePath;
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Path for the TLS private key file"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Path for the TLS private key file"
     )
     private String tlsKeyFilePath;
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Path for the trusted TLS certificate file"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Path for the trusted TLS certificate file"
     )
     private String tlsTrustCertsFilePath = "";
     @FieldContext(
-        category = CATEGORY_SECURITY,
-        doc = "Accept untrusted TLS certificate from client"
+            category = CATEGORY_SECURITY,
+            doc = "Accept untrusted TLS certificate from client"
     )
     private boolean tlsAllowInsecureConnection = false;
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Require trusted client cert on connect"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Require trusted client cert on connect"
     )
     private boolean tlsRequireTrustedClientCertOnConnect = false;
     @FieldContext(
-        category = CATEGORY_CLIENT_SECURITY,
-        doc = "Whether to enable TLS when clients connect to broker",
-        deprecated = true
+            category = CATEGORY_CLIENT_SECURITY,
+            doc = "Whether to enable TLS when clients connect to broker",
+            deprecated = true
     )
     // TLS for Functions -> Broker
     // @deprecated use "pulsar+ssl://" in serviceUrl to enable
     @Deprecated
     private boolean useTls = false;
     @FieldContext(
-        category = CATEGORY_SECURITY,
-        doc = "Whether to enable hostname verification on TLS connections"
+            category = CATEGORY_SECURITY,
+            doc = "Whether to enable hostname verification on TLS connections"
     )
     private boolean tlsHostnameVerificationEnable = false;
     @FieldContext(
             category = CATEGORY_SECURITY,
             doc = "Tls cert refresh duration in seconds (set 0 to check on every new connection)"
-        )
-        private long tlsCertRefreshCheckDurationSec = 300;
+    )
+    private long tlsCertRefreshCheckDurationSec = 300;
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Enforce authentication"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Enforce authentication"
     )
     private boolean authenticationEnabled = false;
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Authentication provider name list, which is a list of class names"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Authentication provider name list, which is a list of class names"
     )
     private Set<String> authenticationProviders = Sets.newTreeSet();
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Enforce authorization on accessing functions admin-api"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Enforce authorization on accessing functions admin-api"
     )
     private boolean authorizationEnabled = false;
     @FieldContext(
@@ -351,15 +356,15 @@ public class WorkerConfig implements Serializable, PulsarConfiguration {
     )
     private String authorizationProvider = PulsarAuthorizationProvider.class.getName();
     @FieldContext(
-        category = CATEGORY_WORKER_SECURITY,
-        doc = "Role names that are treated as `super-user`, meaning they will be able to access any admin-api"
+            category = CATEGORY_WORKER_SECURITY,
+            doc = "Role names that are treated as `super-user`, meaning they will be able to access any admin-api"
     )
     private Set<String> superUserRoles = Sets.newTreeSet();
 
     private Properties properties = new Properties();
 
     public boolean getTlsEnabled() {
-    	return tlsEnabled || workerPortTls != null;
+        return tlsEnabled || workerPortTls != null;
     }
 
     /******** security settings for pulsar broker client **********/
@@ -387,14 +392,14 @@ public class WorkerConfig implements Serializable, PulsarConfiguration {
     private Map<String, Object> functionRuntimeFactoryConfigs;
 
     @FieldContext(
-        category = CATEGORY_FUNC_RUNTIME_MNG,
-        doc = "The classname of the secrets provider configurator."
+            category = CATEGORY_FUNC_RUNTIME_MNG,
+            doc = "The classname of the secrets provider configurator."
     )
     private String secretsProviderConfiguratorClassName;
     @FieldContext(
-        category = CATEGORY_FUNC_RUNTIME_MNG,
-        doc = "Any config the secret provider configurator might need. \n\nThis is passed on"
-            + " to the init method of the SecretsProviderConfigurator"
+            category = CATEGORY_FUNC_RUNTIME_MNG,
+            doc = "Any config the secret provider configurator might need. \n\nThis is passed on"
+                    + " to the init method of the SecretsProviderConfigurator"
     )
     private Map<String, String> secretsProviderConfiguratorConfig;
     @FieldContext(
@@ -440,7 +445,7 @@ public class WorkerConfig implements Serializable, PulsarConfiguration {
 
     @FieldContext(
             doc = "Max pending async requests per instance to avoid large number of concurrent requests."
-                  + "Only used in AsyncFunction. Default: 1000"
+                    + "Only used in AsyncFunction. Default: 1000"
     )
     private int maxPendingAsyncRequests = 1000;
 

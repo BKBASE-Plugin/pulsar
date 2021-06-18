@@ -21,6 +21,7 @@ package org.apache.pulsar.functions.worker.scheduler;
 import org.apache.pulsar.functions.proto.Function.Assignment;
 import org.apache.pulsar.functions.proto.Function.Instance;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -28,14 +29,30 @@ public interface IScheduler {
 
     /**
      * Scheduler schedules assignments to appropriate workers and adds into #resultAssignments
-     * 
+     *
      * @param unassignedFunctionInstances
      *            all unassigned instances
      * @param currentAssignments
      *            current assignments
      * @param workers
+     *            current list of active workers
      * @return
+     *            A list of new assignments
      */
     List<Assignment> schedule(List<Instance> unassignedFunctionInstances, List<Assignment> currentAssignments,
             Set<String> workers);
+
+    /**
+     * Rebalances function instances scheduled to workers
+     *
+     * @param currentAssignments
+     *            current assignments
+     * @param workers
+     *            current list of active workers
+     * @return
+     *            A list of new assignments
+     */
+    default List<Assignment> rebalance(List<Assignment> currentAssignments, Set<String> workers){
+        return Collections.emptyList();
+    }
 }
