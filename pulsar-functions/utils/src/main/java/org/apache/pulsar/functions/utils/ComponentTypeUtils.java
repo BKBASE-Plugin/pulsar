@@ -30,6 +30,8 @@ public class ComponentTypeUtils {
                 return "Source";
             case SINK:
                 return "Sink";
+            case TRANSPORT:
+                return "Transport";
             default:
                 throw new RuntimeException("Unknown componentType " + componentType);
         }

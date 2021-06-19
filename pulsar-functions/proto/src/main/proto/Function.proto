@@ -61,6 +61,7 @@ message FunctionDetails {
         FUNCTION = 1;
         SOURCE = 2;
         SINK = 3;
+        TRANSPORT = 4;
     }
     string tenant = 1;
     string namespace = 2;

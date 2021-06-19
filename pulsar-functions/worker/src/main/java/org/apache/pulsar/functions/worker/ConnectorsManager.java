@@ -51,8 +51,16 @@ public class ConnectorsManager {
         return connectors.getSinkConfigDefinitions().get(sinkType);
     }
 
+    public List<ConfigFieldDefinition> getTransportConfigDefinition(String transportType) {
+        return connectors.getTransportConfigDefinitions().get(transportType);
+    }
+
     public Path getSinkArchive(String sinkType) {
         return connectors.getSinks().get(sinkType);
+    }
+
+    public Path getTransportArchive(String transportType) {
+        return connectors.getTransports().get(transportType);
     }
 
     public void reloadConnectors(WorkerConfig workerConfig) throws IOException {

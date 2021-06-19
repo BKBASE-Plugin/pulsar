@@ -29,10 +29,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.netty.util.Timer;
+import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.pulsar.client.api.Consumer;
@@ -47,7 +50,7 @@ import org.testng.annotations.Test;
 public class ConsumerImplTest {
 
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ThreadFactory threadFactory = new DefaultThreadFactory("client-test-stats", Thread.currentThread().isDaemon());;
     private ConsumerImpl<ConsumerImpl> consumer;
     private ConsumerConfigurationData consumerConf;
 
@@ -69,7 +72,7 @@ public class ConsumerImplTest {
 
         consumerConf.setSubscriptionName("test-sub");
         consumer = ConsumerImpl.newConsumerImpl(client, topic, consumerConf,
-                executorService, -1, false, subscribeFuture, null, null, null,
+                threadFactory, -1, false, subscribeFuture, null, null, null,
                 true);
     }
 

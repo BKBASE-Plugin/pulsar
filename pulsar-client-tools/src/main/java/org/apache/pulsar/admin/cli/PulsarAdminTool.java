@@ -45,10 +45,10 @@ public class PulsarAdminTool {
     String authPluginClassName = null;
 
     @Parameter(
-        names = { "--auth-params" },
-        description = "Authentication parameters, whose format is determined by the implementation " +
-            "of method `configure` in authentication plugin class, for example \"key1:val1,key2:val2\" " +
-            "or \"{\"key1\":\"val1\",\"key2\":\"val2\"}.")
+            names = { "--auth-params" },
+            description = "Authentication parameters, whose format is determined by the implementation " +
+                    "of method `configure` in authentication plugin class, for example \"key1:val1,key2:val2\" " +
+                    "or \"{\"key1\":\"val1\",\"key2\":\"val2\"}.")
     String authParams = null;
 
     @Parameter(names = { "--tls-allow-insecure" }, description = "Allow TLS insecure connection")
@@ -137,6 +137,7 @@ public class PulsarAdminTool {
         // TODO eventually remove this
         commandMap.put("source", CmdSources.class);
         commandMap.put("sink", CmdSinks.class);
+        commandMap.put("transports", CmdTransports.class);
     }
 
     private void setupCommands(Function<PulsarAdminBuilder, ? extends PulsarAdmin> adminFactory) {

@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -50,12 +51,12 @@ public class PatternMultiTopicsConsumerImpl<T> extends MultiTopicsConsumerImpl<T
     private volatile Timeout recheckPatternTimeout = null;
 
     public PatternMultiTopicsConsumerImpl(Pattern topicsPattern,
-                                          PulsarClientImpl client,
-                                          ConsumerConfigurationData<T> conf,
-                                          ExecutorService listenerExecutor,
-                                          CompletableFuture<Consumer<T>> subscribeFuture,
-                                          Schema<T> schema, Mode subscriptionMode, ConsumerInterceptors<T> interceptors) {
-        super(client, conf, listenerExecutor, subscribeFuture, schema, interceptors,
+            PulsarClientImpl client,
+            ConsumerConfigurationData<T> conf,
+            ThreadFactory threadFactory,
+            CompletableFuture<Consumer<T>> subscribeFuture,
+            Schema<T> schema, Mode subscriptionMode, ConsumerInterceptors<T> interceptors) {
+        super(client, conf, threadFactory, subscribeFuture, schema, interceptors,
                 false /* createTopicIfDoesNotExist */);
         this.topicsPattern = topicsPattern;
         this.subscriptionMode = subscriptionMode;
@@ -87,7 +88,7 @@ public class PatternMultiTopicsConsumerImpl<T> extends MultiTopicsConsumerImpl<T
             if (log.isDebugEnabled()) {
                 log.debug("Get topics under namespace {}, topics.size: {}", namespaceName.toString(), topics.size());
                 topics.forEach(topicName ->
-                    log.debug("Get topics under namespace {}, topic: {}", namespaceName.toString(), topicName));
+                        log.debug("Get topics under namespace {}, topic: {}", namespaceName.toString(), topicName));
             }
 
             List<String> newTopics = PulsarClientImpl.topicsPatternFilter(topics, topicsPattern);
@@ -96,12 +97,12 @@ public class PatternMultiTopicsConsumerImpl<T> extends MultiTopicsConsumerImpl<T
             futures.add(topicsChangeListener.onTopicsAdded(topicsListsMinus(newTopics, oldTopics)));
             futures.add(topicsChangeListener.onTopicsRemoved(topicsListsMinus(oldTopics, newTopics)));
             FutureUtil.waitForAll(futures)
-                .thenAccept(finalFuture -> recheckFuture.complete(null))
-                .exceptionally(ex -> {
-                    log.warn("[{}] Failed to recheck topics change: {}", topic, ex.getMessage());
-                    recheckFuture.completeExceptionally(ex);
-                    return null;
-                });
+                    .thenAccept(finalFuture -> recheckFuture.complete(null))
+                    .exceptionally(ex -> {
+                        log.warn("[{}] Failed to recheck topics change: {}", topic, ex.getMessage());
+                        recheckFuture.completeExceptionally(ex);
+                        return null;
+                    });
         });
 
         // schedule the next re-check task
@@ -133,12 +134,12 @@ public class PatternMultiTopicsConsumerImpl<T> extends MultiTopicsConsumerImpl<T
             List<CompletableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(topics.size());
             removedTopics.stream().forEach(topic -> futures.add(removeConsumerAsync(topic)));
             FutureUtil.waitForAll(futures)
-                .thenAccept(finalFuture -> removeFuture.complete(null))
-                .exceptionally(ex -> {
-                    log.warn("[{}] Failed to subscribe topics: {}", topic, ex.getMessage());
-                    removeFuture.completeExceptionally(ex);
-                return null;
-            });
+                    .thenAccept(finalFuture -> removeFuture.complete(null))
+                    .exceptionally(ex -> {
+                        log.warn("[{}] Failed to subscribe topics: {}", topic, ex.getMessage());
+                        removeFuture.completeExceptionally(ex);
+                        return null;
+                    });
             return removeFuture;
         }
 
@@ -154,12 +155,12 @@ public class PatternMultiTopicsConsumerImpl<T> extends MultiTopicsConsumerImpl<T
             List<CompletableFuture<Void>> futures = Lists.newArrayListWithExpectedSize(topics.size());
             addedTopics.stream().forEach(topic -> futures.add(subscribeAsync(topic, false /* createTopicIfDoesNotExist */)));
             FutureUtil.waitForAll(futures)
-                .thenAccept(finalFuture -> addFuture.complete(null))
-                .exceptionally(ex -> {
-                    log.warn("[{}] Failed to unsubscribe topics: {}", topic, ex.getMessage());
-                    addFuture.completeExceptionally(ex);
-                    return null;
-                });
+                    .thenAccept(finalFuture -> addFuture.complete(null))
+                    .exceptionally(ex -> {
+                        log.warn("[{}] Failed to unsubscribe topics: {}", topic, ex.getMessage());
+                        addFuture.completeExceptionally(ex);
+                        return null;
+                    });
             return addFuture;
         }
     }

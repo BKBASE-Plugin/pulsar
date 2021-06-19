@@ -25,7 +25,8 @@ import java.util.concurrent.CompletableFuture;
 import io.prometheus.client.CollectorRegistry;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.pulsar.functions.instance.AuthenticationConfig;
+
+import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.functions.instance.InstanceConfig;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.InstanceCommunication;
@@ -53,8 +54,7 @@ public class ThreadRuntime implements Runtime {
     private ThreadGroup threadGroup;
     private FunctionCacheManager fnCache;
     private String jarFile;
-    private String pulsarServiceUrl;
-    private AuthenticationConfig authConfig;
+    private PulsarClient pulsarClient;
     private String stateStorageServiceUrl;
     private SecretsProvider secretsProvider;
     private CollectorRegistry collectorRegistry;
@@ -63,8 +63,7 @@ public class ThreadRuntime implements Runtime {
             FunctionCacheManager fnCache,
             ThreadGroup threadGroup,
             String jarFile,
-            String pulsarServiceUrl,
-            AuthenticationConfig authConfig,
+            PulsarClient pulsarClient,
             String stateStorageServiceUrl,
             SecretsProvider secretsProvider,
             CollectorRegistry collectorRegistry,
@@ -77,8 +76,7 @@ public class ThreadRuntime implements Runtime {
         this.threadGroup = threadGroup;
         this.fnCache = fnCache;
         this.jarFile = jarFile;
-        this.pulsarServiceUrl = pulsarServiceUrl;
-        this.authConfig = authConfig;
+        this.pulsarClient = pulsarClient;
         this.stateStorageServiceUrl = stateStorageServiceUrl;
         this.secretsProvider = secretsProvider;
         this.collectorRegistry = collectorRegistry;
@@ -87,8 +85,7 @@ public class ThreadRuntime implements Runtime {
                 instanceConfig,
                 fnCache,
                 jarFile,
-                pulsarServiceUrl,
-                authConfig,
+                pulsarClient,
                 stateStorageServiceUrl,
                 secretsProvider,
                 collectorRegistry,
@@ -105,8 +102,7 @@ public class ThreadRuntime implements Runtime {
                 instanceConfig,
                 fnCache,
                 jarFile,
-                pulsarServiceUrl,
-                authConfig,
+                pulsarClient,
                 stateStorageServiceUrl,
                 secretsProvider,
                 collectorRegistry,

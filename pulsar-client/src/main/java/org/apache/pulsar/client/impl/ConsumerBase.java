@@ -28,6 +28,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -81,8 +83,8 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
     protected volatile Timeout batchReceiveTimeout = null;
 
     protected ConsumerBase(PulsarClientImpl client, String topic, ConsumerConfigurationData<T> conf,
-                           int receiverQueueSize, ExecutorService listenerExecutor,
-                           CompletableFuture<Consumer<T>> subscribeFuture, Schema<T> schema, ConsumerInterceptors interceptors) {
+            int receiverQueueSize, ThreadFactory threadFactory,
+            CompletableFuture<Consumer<T>> subscribeFuture, Schema<T> schema, ConsumerInterceptors interceptors) {
         super(client, topic);
         this.maxReceiverQueueSize = receiverQueueSize;
         this.subscription = conf.getSubscriptionName();
@@ -95,7 +97,7 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
         this.incomingMessages = new GrowableArrayBlockingQueue<>();
         this.unAckedChunckedMessageIdSequenceMap = new ConcurrentOpenHashMap<>();
 
-        this.listenerExecutor = listenerExecutor;
+        this.listenerExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         this.pendingReceives = Queues.newConcurrentLinkedQueue();
         this.schema = schema;
         this.interceptors = interceptors;
@@ -108,7 +110,7 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
                         .timeout((int) userBatchReceivePolicy.getTimeoutMs(), TimeUnit.MILLISECONDS)
                         .build();
                 log.warn("BatchReceivePolicy maxNumMessages: {} is greater than maxReceiverQueueSize: {}, " +
-                        "reset to maxReceiverQueueSize. batchReceivePolicy: {}",
+                                "reset to maxReceiverQueueSize. batchReceivePolicy: {}",
                         userBatchReceivePolicy.getMaxNumMessages(), this.maxReceiverQueueSize,
                         this.batchReceivePolicy.toString());
             } else if (userBatchReceivePolicy.getMaxNumMessages() <= 0 && userBatchReceivePolicy.getMaxNumBytes() <= 0) {
@@ -118,7 +120,7 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
                         .timeout((int) userBatchReceivePolicy.getTimeoutMs(), TimeUnit.MILLISECONDS)
                         .build();
                 log.warn("BatchReceivePolicy maxNumMessages: {} or maxNumBytes: {} is less than 0. " +
-                        "Reset to DEFAULT_POLICY. batchReceivePolicy: {}", userBatchReceivePolicy.getMaxNumMessages(),
+                                "Reset to DEFAULT_POLICY. batchReceivePolicy: {}", userBatchReceivePolicy.getMaxNumMessages(),
                         userBatchReceivePolicy.getMaxNumBytes(), this.batchReceivePolicy.toString());
             } else {
                 this.batchReceivePolicy = conf.getBatchReceivePolicy();
@@ -373,7 +375,7 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
     // TODO: expose this method to consumer interface when the transaction feature is completed
     // @Override
     public CompletableFuture<Void> acknowledgeAsync(MessageId messageId,
-                                                    Transaction txn) {
+            Transaction txn) {
         TransactionImpl txnImpl = null;
         if (null != txn) {
             checkArgument(txn instanceof TransactionImpl);
@@ -409,8 +411,8 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
     }
 
     protected CompletableFuture<Void> doAcknowledgeWithTxn(MessageId messageId, AckType ackType,
-                                                           Map<String,Long> properties,
-                                                           TransactionImpl txn) {
+            Map<String,Long> properties,
+            TransactionImpl txn) {
         CompletableFuture<Void> ackFuture = doAcknowledge(messageId, ackType, properties, txn);
         if (txn != null) {
             // it is okay that we register acked topic after sending the acknowledgements. because
@@ -425,13 +427,13 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
     }
 
     protected abstract CompletableFuture<Void> doAcknowledge(MessageId messageId, AckType ackType,
-                                                             Map<String,Long> properties,
-                                                             TransactionImpl txn);
+            Map<String,Long> properties,
+            TransactionImpl txn);
 
     protected abstract CompletableFuture<Void> doReconsumeLater(Message<?> message, AckType ackType,
-                                                                Map<String,Long> properties,
-                                                                long delayTime,
-                                                                TimeUnit unit);
+            Map<String,Long> properties,
+            long delayTime,
+            TimeUnit unit);
 
     @Override
     public void negativeAcknowledge(Messages<?> messages) {
@@ -455,6 +457,7 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
     public void close() throws PulsarClientException {
         try {
             closeAsync().get();
+            this.listenerExecutor.shutdownNow();
         } catch (Exception e) {
             throw PulsarClientException.unwrap(e);
         }
@@ -483,17 +486,17 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
     protected SubType getSubType() {
         SubscriptionType type = conf.getSubscriptionType();
         switch (type) {
-        case Exclusive:
-            return SubType.Exclusive;
+            case Exclusive:
+                return SubType.Exclusive;
 
-        case Shared:
-            return SubType.Shared;
+            case Shared:
+                return SubType.Shared;
 
-        case Failover:
-            return SubType.Failover;
+            case Failover:
+                return SubType.Failover;
 
-        case Key_Shared:
-            return SubType.Key_Shared;
+            case Key_Shared:
+                return SubType.Key_Shared;
         }
 
         // Should not happen since we cover all cases above
@@ -619,11 +622,11 @@ public abstract class ConsumerBase<T> extends HandlerState implements Consumer<T
     private void verifyBatchReceive() throws PulsarClientException {
         if (listener != null) {
             throw new PulsarClientException.InvalidConfigurationException(
-                "Cannot use receive() when a listener has been set");
+                    "Cannot use receive() when a listener has been set");
         }
         if (conf.getReceiverQueueSize() == 0) {
             throw new PulsarClientException.InvalidConfigurationException(
-                "Can't use batch receive, if the queue size is 0");
+                    "Can't use batch receive, if the queue size is 0");
         }
     }
 

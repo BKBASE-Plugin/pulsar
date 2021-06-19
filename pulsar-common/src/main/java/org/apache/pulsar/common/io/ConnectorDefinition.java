@@ -53,6 +53,13 @@ public class ConnectorDefinition {
     private String sinkClass;
 
     /**
+     * The class name for the connector function implementation.
+     *
+     * <p>If not defined, it will be use IdentityFunction.
+     */
+    private String functionClass;
+
+    /**
      * The class name for the source config implementation.
      * Most of the sources are using a config class for managing their config
      * and directly convert the supplied Map object at open to this object.

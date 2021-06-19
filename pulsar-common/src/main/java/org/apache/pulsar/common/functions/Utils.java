@@ -24,6 +24,7 @@ import static org.apache.pulsar.common.naming.TopicName.PUBLIC_TENANT;
 
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.io.SourceConfig;
+import org.apache.pulsar.common.io.TransportConfig;
 
 /**
  * Helper class to work with configuration.
@@ -76,6 +77,18 @@ public class Utils {
         }
         if (sinkConfig.getParallelism() == null) {
             sinkConfig.setParallelism(1);
+        }
+    }
+
+    public static void inferMissingArguments(TransportConfig transportConfig) {
+        if (transportConfig.getTenant() == null) {
+            transportConfig.setTenant(PUBLIC_TENANT);
+        }
+        if (transportConfig.getNamespace() == null) {
+            transportConfig.setNamespace(DEFAULT_NAMESPACE);
+        }
+        if (transportConfig.getParallelism() == null) {
+            transportConfig.setParallelism(1);
         }
     }
 }

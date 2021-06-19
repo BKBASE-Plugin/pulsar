@@ -31,6 +31,7 @@ import org.apache.pulsar.functions.worker.rest.api.v3.SinkApiV3Resource;
 import org.apache.pulsar.functions.worker.rest.api.v3.SinksApiV3Resource;
 import org.apache.pulsar.functions.worker.rest.api.v3.SourceApiV3Resource;
 import org.apache.pulsar.functions.worker.rest.api.v3.SourcesApiV3Resource;
+import org.apache.pulsar.functions.worker.rest.api.v3.TransportsApiV3Resource;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 public final class Resources {
@@ -56,7 +57,8 @@ public final class Resources {
                         SourceApiV3Resource.class,
                         SinksApiV3Resource.class,
                         SinkApiV3Resource.class,
-                        FunctionsApiV3Resource.class
+                        FunctionsApiV3Resource.class,
+                        TransportsApiV3Resource.class
                 ));
     }
 

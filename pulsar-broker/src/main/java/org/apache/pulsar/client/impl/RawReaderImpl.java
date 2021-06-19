@@ -52,7 +52,7 @@ public class RawReaderImpl implements RawReader {
     private RawConsumerImpl consumer;
 
     public RawReaderImpl(PulsarClientImpl client, String topic, String subscription,
-                         CompletableFuture<Consumer<byte[]>> consumerFuture) {
+            CompletableFuture<Consumer<byte[]>> consumerFuture) {
         consumerConfiguration = new ConsumerConfigurationData<>();
         consumerConfiguration.getTopicNames().add(topic);
         consumerConfiguration.setSubscriptionName(subscription);
@@ -61,13 +61,13 @@ public class RawReaderImpl implements RawReader {
         consumerConfiguration.setReadCompacted(true);
 
         consumer = new RawConsumerImpl(client, consumerConfiguration,
-                                       consumerFuture);
+                consumerFuture);
     }
 
     @Override
     public String getTopic() {
         return consumerConfiguration.getTopicNames().stream()
-            .findFirst().orElse(null);
+                .findFirst().orElse(null);
     }
 
     @Override
@@ -112,16 +112,16 @@ public class RawReaderImpl implements RawReader {
         RawConsumerImpl(PulsarClientImpl client, ConsumerConfigurationData<byte[]> conf,
                 CompletableFuture<Consumer<byte[]>> consumerFuture) {
             super(client,
-                conf.getSingleTopic(),
-                conf,
-                client.externalExecutorProvider().getExecutor(),
-                TopicName.getPartitionIndex(conf.getSingleTopic()),
-                false,
-                consumerFuture,
-                MessageId.earliest,
-                0 /* startMessageRollbackDurationInSec */,
-                Schema.BYTES, null,
-                true
+                    conf.getSingleTopic(),
+                    conf,
+                    PulsarClientImpl.getExternalListenerThreadFactory(),
+                    TopicName.getPartitionIndex(conf.getSingleTopic()),
+                    false,
+                    consumerFuture,
+                    MessageId.earliest,
+                    0 /* startMessageRollbackDurationInSec */,
+                    Schema.BYTES, null,
+                    true
             );
             incomingRawMessages = new GrowableArrayBlockingQueue<>();
             pendingRawReceives = new ConcurrentLinkedQueue<>();
@@ -133,7 +133,7 @@ public class RawReaderImpl implements RawReader {
 
             synchronized (this) {
                 if (!pendingRawReceives.isEmpty()
-                    && !incomingRawMessages.isEmpty()) {
+                        && !incomingRawMessages.isEmpty()) {
                     future = pendingRawReceives.remove();
                     messageAndCnx = incomingRawMessages.remove();
                 }
@@ -207,7 +207,7 @@ public class RawReaderImpl implements RawReader {
         void messageReceived(MessageIdData messageId, int redeliveryCount, List<Long> ackSet, ByteBuf headersAndPayload, ClientCnx cnx) {
             if (log.isDebugEnabled()) {
                 log.debug("[{}][{}] Received raw message: {}/{}/{}", topic, subscription,
-                          messageId.getEntryId(), messageId.getLedgerId(), messageId.getPartition());
+                        messageId.getEntryId(), messageId.getLedgerId(), messageId.getPartition());
             }
             incomingRawMessages.add(
                     new RawMessageAndCnx(new RawMessageImpl(messageId, headersAndPayload), cnx));

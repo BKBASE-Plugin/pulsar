@@ -20,6 +20,7 @@ package org.apache.pulsar.functions.instance;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 import lombok.experimental.UtilityClass;
 
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.functions.api.SerDe;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.Function.FunctionDetails.ComponentType;
 import org.apache.pulsar.functions.sink.PulsarSink;
 import org.apache.pulsar.common.util.Reflections;
 
@@ -39,7 +41,7 @@ import java.util.Map;
 @UtilityClass
 public class InstanceUtils {
     public static SerDe<?> initializeSerDe(String serdeClassName, ClassLoader clsLoader, Class<?> typeArg,
-                                           boolean deser) {
+            boolean deser) {
         SerDe<?> serDe = createInstance(serdeClassName, clsLoader, SerDe.class);
 
         Class<?>[] inputSerdeTypeArgs = TypeResolver.resolveRawArguments(SerDe.class, serDe.getClass());
@@ -59,7 +61,7 @@ public class InstanceUtils {
     }
 
     public static Schema<?> initializeCustomSchema(String schemaClassName, ClassLoader clsLoader, Class<?> typeArg,
-                                                   boolean input) {
+            boolean input) {
         Schema<?> schema = createInstance(schemaClassName, clsLoader, Schema.class);
 
         Class<?>[] inputSerdeTypeArgs = TypeResolver.resolveRawArguments(Schema.class, schema.getClass());
@@ -89,8 +91,13 @@ public class InstanceUtils {
         if (functionDetails.getComponentType() != Function.FunctionDetails.ComponentType.UNKNOWN) {
             return functionDetails.getComponentType();
         }
+
         Function.SourceSpec sourceSpec = functionDetails.getSource();
         Function.SinkSpec sinkSpec = functionDetails.getSink();
+        if (isNotEmpty(sinkSpec.getClassName()) && isNotEmpty(sourceSpec.getClassName())) {
+            return Function.FunctionDetails.ComponentType.TRANSPORT;
+        }
+
         if (sourceSpec.getInputSpecsCount() == 0) {
             return Function.FunctionDetails.ComponentType.SOURCE;
         }
@@ -104,6 +111,7 @@ public class InstanceUtils {
         if (isEmpty(sinkSpec.getClassName()) || sinkSpec.getClassName().equals(PulsarSink.class.getName())) {
             return Function.FunctionDetails.ComponentType.FUNCTION;
         }
+
         return Function.FunctionDetails.ComponentType.SINK;
     }
 
@@ -119,7 +127,7 @@ public class InstanceUtils {
     }
 
     public static Map<String, String> getProperties(Function.FunctionDetails.ComponentType componentType,
-                                                    String fullyQualifiedName, int instanceId) {
+            String fullyQualifiedName, int instanceId) {
         Map<String, String> properties = new HashMap<>();
         switch (componentType) {
             case FUNCTION:
@@ -130,6 +138,9 @@ public class InstanceUtils {
                 break;
             case SINK:
                 properties.put("application", "pulsar-sink");
+                break;
+            case TRANSPORT:
+                properties.put("application", "pulsar-transport");
                 break;
         }
         properties.put("id", fullyQualifiedName);

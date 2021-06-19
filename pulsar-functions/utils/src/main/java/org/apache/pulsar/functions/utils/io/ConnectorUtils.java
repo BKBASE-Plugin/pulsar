@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Function;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +77,34 @@ public class ConnectorUtils {
         return conf.getSourceClass();
     }
 
+
+    /**
+     * Extract the Pulsar IO Function class from a connector archive.
+     */
+    public static String getIOFunctionClass(NarClassLoader ncl) throws IOException {
+        String configStr = ncl.getServiceDefinition(PULSAR_IO_SERVICE_NAME);
+
+        ConnectorDefinition conf = ObjectMapperFactory.getThreadLocalYaml().readValue(configStr,
+                ConnectorDefinition.class);
+        if (StringUtils.isEmpty(conf.getFunctionClass())) {
+            return null;
+        }
+
+
+        try {
+            // Try to load source class and check it implements Source interface
+            Class functionClass = ncl.loadClass(conf.getFunctionClass());
+            if (!(org.apache.pulsar.functions.api.Function.class.isAssignableFrom(functionClass)) && !(java.util.function.Function.class.isAssignableFrom(functionClass))) {
+                throw new IOException("Class " + conf.getSourceClass() + " does not implement interface "
+                        + org.apache.pulsar.functions.api.Function.class.getName()+" or "+ java.util.function.Function.class.getName());
+            }
+        } catch (Throwable t) {
+            Exceptions.rethrowIOException(t);
+        }
+
+        return conf.getFunctionClass();
+    }
+
     /**
      * Extract the Pulsar IO Sink class from a connector archive.
      */
@@ -115,8 +144,8 @@ public class ConnectorUtils {
     }
 
     public static List<ConfigFieldDefinition> getConnectorConfigDefinition(String narPath,
-                                                                           String configClassName,
-                                                                           String narExtractionDirectory) throws Exception {
+            String configClassName,
+            String narExtractionDirectory) throws Exception {
         List<ConfigFieldDefinition> retval = new LinkedList<>();
         try (NarClassLoader ncl = NarClassLoader.getFromArchive(new File(narPath), Collections.emptySet(), narExtractionDirectory)) {
             Class configClass = ncl.loadClass(configClassName);
@@ -175,6 +204,19 @@ public class ConnectorUtils {
                         if (!StringUtils.isEmpty(cntDef.getSinkConfigClass())) {
                             connectors.sinkConfigDefinitions.put(cntDef.getName(), getConnectorConfigDefinition(archive.toString(), cntDef.getSinkConfigClass(), narExtractionDirectory));
                         }
+                    }
+
+                    if (!StringUtils.isEmpty(cntDef.getSinkClass()) && !StringUtils.isEmpty(cntDef.getSourceClass())) {
+                        connectors.transports.put(cntDef.getName(), archive);
+                        List<ConfigFieldDefinition> configFieldDefinitions = new ArrayList<>();
+                        if (!StringUtils.isEmpty(cntDef.getSinkConfigClass())) {
+                            configFieldDefinitions.addAll(getConnectorConfigDefinition(archive.toString(), cntDef.getSinkConfigClass(), narExtractionDirectory));
+                        }
+
+                        if (!StringUtils.isEmpty(cntDef.getSourceConfigClass())) {
+                            configFieldDefinitions.addAll(getConnectorConfigDefinition(archive.toString(), cntDef.getSourceConfigClass(), narExtractionDirectory));
+                        }
+                        connectors.transportConfigDefinitions.put(cntDef.getName(), configFieldDefinitions);
                     }
 
                     connectors.connectors.add(cntDef);

@@ -46,6 +46,7 @@ import org.apache.pulsar.client.admin.internal.SinksImpl;
 import org.apache.pulsar.client.admin.internal.SourcesImpl;
 import org.apache.pulsar.client.admin.internal.TenantsImpl;
 import org.apache.pulsar.client.admin.internal.TopicsImpl;
+import org.apache.pulsar.client.admin.internal.TransportsImpl;
 import org.apache.pulsar.client.admin.internal.WorkerImpl;
 import org.apache.pulsar.client.admin.internal.http.AsyncHttpConnector;
 import org.apache.pulsar.client.admin.internal.http.AsyncHttpConnectorProvider;
@@ -92,6 +93,7 @@ public class PulsarAdmin implements Closeable {
     private final Functions functions;
     private final Sources sources;
     private final Sinks sinks;
+    private final Transports transports;
     private final Worker worker;
     private final Schemas schemas;
     protected final WebTarget root;
@@ -137,13 +139,13 @@ public class PulsarAdmin implements Closeable {
     }
 
     public PulsarAdmin(String serviceUrl,
-                       ClientConfigurationData clientConfigData,
-                       int connectTimeout,
-                       TimeUnit connectTimeoutUnit,
-                       int readTimeout,
-                       TimeUnit readTimeoutUnit,
-                       int requestTimeout,
-                       TimeUnit requestTimeoutUnit) throws PulsarClientException {
+            ClientConfigurationData clientConfigData,
+            int connectTimeout,
+            TimeUnit connectTimeoutUnit,
+            int readTimeout,
+            TimeUnit readTimeoutUnit,
+            int requestTimeout,
+            TimeUnit requestTimeoutUnit) throws PulsarClientException {
         this.connectTimeout = connectTimeout;
         this.connectTimeoutUnit = connectTimeoutUnit;
         this.readTimeout = readTimeout;
@@ -204,6 +206,7 @@ public class PulsarAdmin implements Closeable {
         this.functions = new FunctionsImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
         this.sources = new SourcesImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
         this.sinks = new SinksImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
+        this.transports = new TransportsImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
         this.worker = new WorkerImpl(root, auth, readTimeoutMs);
         this.schemas = new SchemasImpl(root, auth, readTimeoutMs);
         this.bookies = new BookiesImpl(root, auth, readTimeoutMs);
@@ -377,12 +380,16 @@ public class PulsarAdmin implements Closeable {
         return sinks;
     }
 
+    public Transports transports(){
+        return transports;
+    }
+
     /**
-    * @return the Worker stats
-    */
-   public Worker worker() {
-       return worker;
-   }
+     * @return the Worker stats
+     */
+    public Worker worker() {
+        return worker;
+    }
 
     /**
      * @return the broker statics

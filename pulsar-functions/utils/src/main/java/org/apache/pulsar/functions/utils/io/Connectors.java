@@ -36,4 +36,6 @@ public class Connectors {
     final Map<String, List<ConfigFieldDefinition>> sourceConfigDefinitions = new TreeMap<>();
     final Map<String, Path> sinks = new TreeMap<>();
     final Map<String, List<ConfigFieldDefinition>> sinkConfigDefinitions = new TreeMap<>();
+    final Map<String, Path> transports = new TreeMap<>();
+    final Map<String, List<ConfigFieldDefinition>> transportConfigDefinitions = new TreeMap<>();
 }

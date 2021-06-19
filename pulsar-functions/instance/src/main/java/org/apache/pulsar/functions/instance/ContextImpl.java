@@ -38,6 +38,7 @@ import org.apache.pulsar.functions.instance.stats.ComponentStatsManager;
 import org.apache.pulsar.functions.instance.stats.FunctionStatsManager;
 import org.apache.pulsar.functions.instance.stats.SinkStatsManager;
 import org.apache.pulsar.functions.instance.stats.SourceStatsManager;
+import org.apache.pulsar.functions.instance.stats.TransportStatsManager;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.Function.SinkSpec;
 import org.apache.pulsar.functions.secretsprovider.SecretsProvider;
@@ -96,9 +97,9 @@ class ContextImpl implements Context, SinkContext, SourceContext {
     private final Function.FunctionDetails.ComponentType componentType;
 
     public ContextImpl(InstanceConfig config, Logger logger, PulsarClient client,
-                       SecretsProvider secretsProvider, CollectorRegistry collectorRegistry, String[] metricsLabels,
-                       Function.FunctionDetails.ComponentType componentType, ComponentStatsManager statsManager,
-                       Table<ByteBuf, ByteBuf> stateTable) {
+            SecretsProvider secretsProvider, CollectorRegistry collectorRegistry, String[] metricsLabels,
+            Function.FunctionDetails.ComponentType componentType, ComponentStatsManager statsManager,
+            Table<ByteBuf, ByteBuf> stateTable) {
         this.config = config;
         this.logger = logger;
         this.client = client;
@@ -136,6 +137,9 @@ class ContextImpl implements Context, SinkContext, SourceContext {
                 break;
             case SOURCE:
                 prefix = SourceStatsManager.PULSAR_SOURCE_METRICS_PREFIX;
+                break;
+            case TRANSPORT:
+                prefix = TransportStatsManager.PULSAR_TRANSPORT_METRICS_PREFIX;
                 break;
             default:
                 throw new RuntimeException("Unknown component type: " + componentType);

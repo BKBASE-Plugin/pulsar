@@ -54,9 +54,9 @@ public abstract class ComponentStatsManager implements AutoCloseable {
     }
 
     public static ComponentStatsManager getStatsManager(CollectorRegistry collectorRegistry,
-                                  String[] metricsLabels,
-                                  ScheduledExecutorService scheduledExecutorService,
-                                  Function.FunctionDetails.ComponentType componentType) {
+            String[] metricsLabels,
+            ScheduledExecutorService scheduledExecutorService,
+            Function.FunctionDetails.ComponentType componentType) {
         switch (componentType) {
             case FUNCTION:
                 return new FunctionStatsManager(collectorRegistry, metricsLabels, scheduledExecutorService);
@@ -64,14 +64,16 @@ public abstract class ComponentStatsManager implements AutoCloseable {
                 return new SourceStatsManager(collectorRegistry, metricsLabels, scheduledExecutorService);
             case SINK:
                 return new SinkStatsManager(collectorRegistry, metricsLabels, scheduledExecutorService);
+            case TRANSPORT:
+                return new TransportStatsManager(collectorRegistry, metricsLabels, scheduledExecutorService);
             default:
                 throw new RuntimeException("Unknown component type: " + componentType);
         }
     }
 
     public ComponentStatsManager(CollectorRegistry collectorRegistry,
-                         String[] metricsLabels,
-                         ScheduledExecutorService scheduledExecutorService) {
+            String[] metricsLabels,
+            ScheduledExecutorService scheduledExecutorService) {
 
         this.collectorRegistry = collectorRegistry;
         this.metricsLabels = metricsLabels;

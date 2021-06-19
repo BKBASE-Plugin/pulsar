@@ -924,6 +924,9 @@ public class KubernetesRuntime implements Runtime {
             case SINK:
                 component = "sink";
                 break;
+            case TRANSPORT:
+                component = "transport";
+                break;
             default:
                 component = "function";
                 break;

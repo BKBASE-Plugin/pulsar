@@ -56,8 +56,8 @@ public class MultiTopicsConsumerImplTest {
         assertEquals(Long.parseLong("100"), clientImpl.getConfiguration().getStatsIntervalSeconds());
 
         MultiTopicsConsumerImpl impl = new MultiTopicsConsumerImpl(
-            clientImpl, consumerConfData,
-            listenerExecutor, null, null, null, true);
+                clientImpl, consumerConfData,
+                threadFactory, null, null, null, true);
 
         impl.getStats();
     }
