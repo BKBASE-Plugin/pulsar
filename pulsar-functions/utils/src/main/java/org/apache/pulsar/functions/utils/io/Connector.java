@@ -31,6 +31,7 @@ public class Connector {
     private Path archivePath;
     private List<ConfigFieldDefinition> sourceConfigFieldDefinitions;
     private List<ConfigFieldDefinition> sinkConfigFieldDefinitions;
+    private List<ConfigFieldDefinition> transportConfigFieldDefinitions;
     private ClassLoader classLoader;
     private ConnectorDefinition connectorDefinition;
 }

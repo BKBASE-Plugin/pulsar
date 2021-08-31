@@ -62,6 +62,8 @@ public abstract class ComponentStatsManager implements AutoCloseable {
                 return new SourceStatsManager(collectorRegistry, metricsLabels, scheduledExecutorService);
             case SINK:
                 return new SinkStatsManager(collectorRegistry, metricsLabels, scheduledExecutorService);
+            case TRANSPORT:
+                return new TransportStatsManager(collectorRegistry, metricsLabels, scheduledExecutorService);
             default:
                 throw new RuntimeException("Unknown component type: " + componentType);
         }

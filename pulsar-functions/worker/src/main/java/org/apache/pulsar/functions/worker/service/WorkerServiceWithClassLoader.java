@@ -37,6 +37,7 @@ import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.apache.pulsar.functions.worker.service.api.FunctionsV2;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.apache.pulsar.functions.worker.service.api.Sources;
+import org.apache.pulsar.functions.worker.service.api.Transports;
 import org.apache.pulsar.functions.worker.service.api.Workers;
 import org.apache.pulsar.zookeeper.ZooKeeperCache;
 
@@ -105,6 +106,11 @@ public class WorkerServiceWithClassLoader implements WorkerService {
     @Override
     public Sinks<? extends WorkerService> getSinks() {
         return service.getSinks();
+    }
+
+    @Override
+    public Transports<? extends WorkerService> getTransports() {
+        return service.getTransports();
     }
 
     @Override

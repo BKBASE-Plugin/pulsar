@@ -29,6 +29,7 @@ import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.apache.pulsar.functions.worker.service.api.FunctionsV2;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.apache.pulsar.functions.worker.service.api.Sources;
+import org.apache.pulsar.functions.worker.service.api.Transports;
 import org.apache.pulsar.functions.worker.service.api.Workers;
 
 /**
@@ -114,6 +115,13 @@ public interface WorkerService {
      * @return the sinks service.
      */
     Sinks<? extends WorkerService> getSinks();
+
+    /**
+     * Get the sinks service.
+     *
+     * @return the sinks service.
+     */
+    Transports<? extends WorkerService> getTransports();
 
     /**
      * Get the sources service.

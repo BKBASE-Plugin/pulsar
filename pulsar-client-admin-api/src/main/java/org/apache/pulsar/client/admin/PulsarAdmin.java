@@ -127,6 +127,11 @@ public interface PulsarAdmin extends Closeable {
     Sinks sinks();
 
     /**
+     * @return the Transports management object
+     */
+    Transports transports();
+
+    /**
      * @return the Worker stats
      */
     Worker worker();

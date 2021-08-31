@@ -20,6 +20,7 @@ package org.apache.pulsar.functions.instance;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import lombok.experimental.UtilityClass;
@@ -35,6 +36,7 @@ import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SizeUnit;
 import org.apache.pulsar.functions.api.SerDe;
 import org.apache.pulsar.functions.proto.Function;
+import org.apache.pulsar.functions.proto.Function.FunctionDetails.ComponentType;
 import org.apache.pulsar.functions.sink.PulsarSink;
 import org.apache.pulsar.common.util.Reflections;
 
@@ -103,6 +105,10 @@ public class InstanceUtils {
         }
         Function.SourceSpec sourceSpec = functionDetails.getSource();
         Function.SinkSpec sinkSpec = functionDetails.getSink();
+        if (isNotEmpty(sinkSpec.getClassName()) && isNotEmpty(sourceSpec.getClassName())) {
+            return Function.FunctionDetails.ComponentType.TRANSPORT;
+        }
+
         if (sourceSpec.getInputSpecsCount() == 0) {
             return Function.FunctionDetails.ComponentType.SOURCE;
         }
@@ -142,6 +148,9 @@ public class InstanceUtils {
                 break;
             case SINK:
                 properties.put("application", "pulsar-sink");
+                break;
+            case TRANSPORT:
+                properties.put("application", "pulsar-transport");
                 break;
             default:
                 throw new IllegalArgumentException("Not support component type");

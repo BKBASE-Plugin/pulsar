@@ -66,11 +66,13 @@ import org.apache.pulsar.functions.worker.rest.api.FunctionsImpl;
 import org.apache.pulsar.functions.worker.rest.api.FunctionsImplV2;
 import org.apache.pulsar.functions.worker.rest.api.SinksImpl;
 import org.apache.pulsar.functions.worker.rest.api.SourcesImpl;
+import org.apache.pulsar.functions.worker.rest.api.TransportsImpl;
 import org.apache.pulsar.functions.worker.rest.api.WorkerImpl;
 import org.apache.pulsar.functions.worker.service.api.Functions;
 import org.apache.pulsar.functions.worker.service.api.FunctionsV2;
 import org.apache.pulsar.functions.worker.service.api.Sinks;
 import org.apache.pulsar.functions.worker.service.api.Sources;
+import org.apache.pulsar.functions.worker.service.api.Transports;
 import org.apache.pulsar.functions.worker.service.api.Workers;
 import org.apache.pulsar.metadata.api.MetadataStoreException.AlreadyExistsException;
 import org.slf4j.Logger;
@@ -123,6 +125,7 @@ public class PulsarWorkerService implements WorkerService {
     private FunctionsV2<PulsarWorkerService> functionsV2;
     private Sinks<PulsarWorkerService> sinks;
     private Sources<PulsarWorkerService> sources;
+    private Transports<PulsarWorkerService> transports;
     private Workers<PulsarWorkerService> workers;
 
     private final PulsarClientCreator clientCreator;
@@ -190,6 +193,7 @@ public class PulsarWorkerService implements WorkerService {
         this.sinks = new SinksImpl(() -> PulsarWorkerService.this);
         this.sources = new SourcesImpl(() -> PulsarWorkerService.this);
         this.workers = new WorkerImpl(() -> PulsarWorkerService.this);
+        this.transports = new TransportsImpl(() -> PulsarWorkerService.this);
     }
 
     @Override
