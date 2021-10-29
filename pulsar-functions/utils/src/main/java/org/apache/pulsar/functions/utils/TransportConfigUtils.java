@@ -283,6 +283,14 @@ public class TransportConfigUtils {
         // extract type from source class
         Class<?> sourceTypeArg = getSourceType(sourceClass);
 
+        if (isEmpty(functionClassName)) {
+            try {
+                functionClassName = ConnectorUtils.getIOFunctionClass((NarClassLoader) tranportClassLoader);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Failed to extract function class from archive", e);
+            }
+        }
+
        // validate user defined config if enabled and sink is loaded from NAR
         if (validateConnectorConfig && tranportClassLoader instanceof NarClassLoader) {
             validateConnectorConfig(transportConfig, (NarClassLoader) tranportClassLoader);
