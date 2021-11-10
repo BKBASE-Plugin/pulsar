@@ -65,6 +65,7 @@ import org.apache.pulsar.functions.instance.stats.FunctionCollectorRegistry;
 import org.apache.pulsar.functions.instance.stats.FunctionStatsManager;
 import org.apache.pulsar.functions.instance.stats.SinkStatsManager;
 import org.apache.pulsar.functions.instance.stats.SourceStatsManager;
+import org.apache.pulsar.functions.instance.stats.TransportStatsManager;
 import org.apache.pulsar.functions.proto.Function;
 import org.apache.pulsar.functions.proto.Function.SinkSpec;
 import org.apache.pulsar.functions.secretsprovider.SecretsProvider;
@@ -185,6 +186,9 @@ class ContextImpl implements Context, SinkContext, SourceContext, AutoCloseable 
                 break;
             case SOURCE:
                 prefix = SourceStatsManager.PULSAR_SOURCE_METRICS_PREFIX;
+                break;
+            case TRANSPORT:
+                prefix = TransportStatsManager.PULSAR_TRANSPORT_METRICS_PREFIX;
                 break;
             default:
                 throw new RuntimeException("Unknown component type: " + componentType);

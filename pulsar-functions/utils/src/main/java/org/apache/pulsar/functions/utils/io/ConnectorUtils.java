@@ -78,6 +78,34 @@ public class ConnectorUtils {
     }
 
     /**
+     * Extract the Pulsar IO Function class from a connector archive.
+     */
+    public static String getIOFunctionClass(NarClassLoader ncl) throws IOException {
+        String configStr = ncl.getServiceDefinition(PULSAR_IO_SERVICE_NAME);
+
+        ConnectorDefinition conf = ObjectMapperFactory.getThreadLocalYaml().readValue(configStr,
+                ConnectorDefinition.class);
+        if (StringUtils.isEmpty(conf.getFunctionClass())) {
+            return null;
+        }
+
+
+        try {
+            // Try to load source class and check it implements Source interface
+            Class functionClass = ncl.loadClass(conf.getFunctionClass());
+            if (!(org.apache.pulsar.functions.api.Function.class.isAssignableFrom(functionClass)) && !(java.util.function.Function.class.isAssignableFrom(functionClass))) {
+                throw new IOException("Class " + conf.getSourceClass() + " does not implement interface "
+                        + org.apache.pulsar.functions.api.Function.class.getName()+" or "+ java.util.function.Function.class.getName());
+            }
+        } catch (Throwable t) {
+            Exceptions.rethrowIOException(t);
+        }
+
+        return conf.getFunctionClass();
+    }
+
+
+    /**
      * Extract the Pulsar IO Sink class from a connector archive.
      */
     public static String getIOSinkClass(NarClassLoader narClassLoader) throws IOException {
@@ -167,6 +195,16 @@ public class ConnectorUtils {
                     if (!StringUtils.isEmpty(cntDef.getSinkClass())) {
                         if (!StringUtils.isEmpty(cntDef.getSinkConfigClass())) {
                             connectorBuilder.sinkConfigFieldDefinitions(ConnectorUtils.getConnectorConfigDefinition(ncl, cntDef.getSinkConfigClass()));
+                        }
+                    }
+
+                    if (!StringUtils.isEmpty(cntDef.getSinkClass()) && !StringUtils.isEmpty(cntDef.getSourceClass())) {
+                        if (!StringUtils.isEmpty(cntDef.getSinkConfigClass())) {
+                            connectorBuilder.transportConfigFieldDefinitions(ConnectorUtils.getConnectorConfigDefinition(ncl, cntDef.getSinkConfigClass()));
+                        }
+
+                        if (!StringUtils.isEmpty(cntDef.getSourceConfigClass())) {
+                            connectorBuilder.transportConfigFieldDefinitions(ConnectorUtils.getConnectorConfigDefinition(ncl, cntDef.getSourceConfigClass()));
                         }
                     }
 

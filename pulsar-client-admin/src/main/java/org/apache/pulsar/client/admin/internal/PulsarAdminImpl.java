@@ -49,6 +49,7 @@ import org.apache.pulsar.client.admin.Sources;
 import org.apache.pulsar.client.admin.Tenants;
 import org.apache.pulsar.client.admin.Topics;
 import org.apache.pulsar.client.admin.Transactions;
+import org.apache.pulsar.client.admin.Transports;
 import org.apache.pulsar.client.admin.Worker;
 import org.apache.pulsar.client.admin.internal.http.AsyncHttpConnector;
 import org.apache.pulsar.client.admin.internal.http.AsyncHttpConnectorProvider;
@@ -98,6 +99,7 @@ public class PulsarAdminImpl implements PulsarAdmin {
     private final Functions functions;
     private final Sources sources;
     private final Sinks sinks;
+    private final Transports transports;
     private final Worker worker;
     private final Schemas schemas;
     private final Packages packages;
@@ -219,6 +221,7 @@ public class PulsarAdminImpl implements PulsarAdmin {
         this.functions = new FunctionsImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
         this.sources = new SourcesImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
         this.sinks = new SinksImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
+        this.transports = new TransportsImpl(root, auth, asyncHttpConnector.getHttpClient(), readTimeoutMs);
         this.worker = new WorkerImpl(root, auth, readTimeoutMs);
         this.schemas = new SchemasImpl(root, auth, readTimeoutMs);
         this.bookies = new BookiesImpl(root, auth, readTimeoutMs);
@@ -404,6 +407,14 @@ public class PulsarAdminImpl implements PulsarAdmin {
     public Sinks sinks() {
         return sinks;
     }
+
+    /**
+     * @return the Transports management object
+     */
+    public Transports transports(){
+        return transports;
+    }
+
 
     /**
      * @return the Worker stats

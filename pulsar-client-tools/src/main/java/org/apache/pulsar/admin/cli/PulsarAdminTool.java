@@ -154,6 +154,7 @@ public class PulsarAdminTool {
         // TODO eventually remove this
         commandMap.put("source", CmdSources.class);
         commandMap.put("sink", CmdSinks.class);
+        commandMap.put("transports", CmdTransports.class);
 
         commandMap.put("packages", CmdPackages.class);
     }
