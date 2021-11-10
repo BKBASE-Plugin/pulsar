@@ -3942,7 +3942,7 @@ public interface Namespaces {
     CompletableFuture<Void> removeMaxTopicsPerNamespaceAsync(String namespace);
 
     /**
-<<<<<<< HEAD
+
      * Set key value pair property for a namespace.
      * If the property absents, a new property will added. Otherwise, the new value will overwrite.
      *
