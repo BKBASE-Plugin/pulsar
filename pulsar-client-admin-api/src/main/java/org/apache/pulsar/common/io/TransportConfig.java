@@ -49,7 +49,6 @@ public class TransportConfig {
     private String archive;
     private Boolean autoAck;
     private Boolean retainOrdering;
-    private Integer maxPendingAsyncRequests;
 
     // source sink
     private String sinkClassName;
@@ -61,11 +60,6 @@ public class TransportConfig {
     private String logTopic;
     private Map<String, Object> userConfig;
     private Map<String, Object> secrets;
-    private String fqfn;
     private WindowConfig windowConfig;
-    private String jar;
-    private String py;
-    private String go;
-
 
 }

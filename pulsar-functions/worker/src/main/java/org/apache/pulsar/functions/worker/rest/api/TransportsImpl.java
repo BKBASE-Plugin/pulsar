@@ -46,7 +46,6 @@ import org.apache.pulsar.functions.proto.InstanceCommunication;
 import org.apache.pulsar.functions.utils.ComponentTypeUtils;
 import org.apache.pulsar.functions.utils.FunctionCommon;
 import org.apache.pulsar.functions.utils.TransportConfigUtils;
-import org.apache.pulsar.functions.utils.io.Connector;
 import org.apache.pulsar.functions.worker.FunctionMetaDataManager;
 import org.apache.pulsar.functions.worker.PulsarWorkerService;
 import org.apache.pulsar.functions.worker.WorkerUtils;
@@ -78,7 +77,7 @@ public class TransportsImpl extends ComponentImpl implements Transports<PulsarWo
             final String transportName,
             final InputStream uploadedInputStream,
             final FormDataContentDisposition fileDetail,
-            final String connectorPkgUrl,
+            final String transportPkgUrl,
             final TransportConfig transportConfig,
             final String clientRole,
             AuthenticationDataHttps clientAuthenticationDataHttps) {
@@ -145,21 +144,24 @@ public class TransportsImpl extends ComponentImpl implements Transports<PulsarWo
         }
 
         Function.FunctionDetails functionDetails = null;
-        boolean isPkgUrlProvided = isNotBlank(connectorPkgUrl);
+        boolean isPkgUrlProvided = isNotBlank(transportPkgUrl);
         File componentPackageFile = null;
         try {
 
             // validate parameters
             try {
                 if (isPkgUrlProvided) {
-
-                    if (!Utils.isFunctionPackageUrlSupported(connectorPkgUrl)) {
-                        throw new IllegalArgumentException("Function Package url is not valid. supported url (http/https/file)");
-                    }
-                    try {
-                        componentPackageFile = FunctionCommon.extractFileFromPkgURL(connectorPkgUrl);
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException(String.format("Encountered error \"%s\" when getting %s package from %s", e.getMessage(), ComponentTypeUtils.toString(componentType), connectorPkgUrl));
+                    if (Utils.hasPackageTypePrefix(transportPkgUrl)) {
+                        componentPackageFile = downloadPackageFile(transportPkgUrl);
+                    } else {
+                        if (!Utils.isFunctionPackageUrlSupported(transportPkgUrl)) {
+                            throw new IllegalArgumentException("Function Package url is not valid. supported url (http/https/file)");
+                        }
+                        try {
+                            componentPackageFile = FunctionCommon.extractFileFromPkgURL(transportPkgUrl);
+                        } catch (Exception e) {
+                            throw new IllegalArgumentException(String.format("Encountered error \"%s\" when getting %s package from %s", e.getMessage(), ComponentTypeUtils.toString(componentType), transportPkgUrl));
+                        }
                     }
                     functionDetails = validateUpdateRequestParams(tenant, namespace, transportName,
                             transportConfig, componentPackageFile);
@@ -221,7 +223,7 @@ public class TransportsImpl extends ComponentImpl implements Transports<PulsarWo
             Function.PackageLocationMetaData.Builder packageLocationMetaDataBuilder;
             try {
                 packageLocationMetaDataBuilder = getFunctionPackageLocation(functionMetaDataBuilder.build(),
-                        connectorPkgUrl, fileDetail, componentPackageFile);
+                        transportPkgUrl, fileDetail, componentPackageFile);
             } catch (Exception e) {
                 log.error("Failed process {} {}/{}/{} package: ", ComponentTypeUtils.toString(componentType), tenant, namespace, transportName, e);
                 throw new RestException(Response.Status.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -231,7 +233,7 @@ public class TransportsImpl extends ComponentImpl implements Transports<PulsarWo
             updateRequest(null, functionMetaDataBuilder.build());
         } finally {
 
-            if (!(connectorPkgUrl != null && connectorPkgUrl.startsWith(Utils.FILE))
+            if (!(transportPkgUrl != null && transportPkgUrl.startsWith(Utils.FILE))
                     && componentPackageFile != null && componentPackageFile.exists()) {
                 componentPackageFile.delete();
             }
@@ -313,14 +315,17 @@ public class TransportsImpl extends ComponentImpl implements Transports<PulsarWo
             // validate parameters
             try {
                 if (isNotBlank(transportPkgUrl)) {
-                    try {
-                        componentPackageFile = FunctionCommon.extractFileFromPkgURL(transportPkgUrl);
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException(String.format("Encountered error \"%s\" when getting %s package from %s", e.getMessage(), ComponentTypeUtils.toString(componentType), transportPkgUrl));
+                    if (Utils.hasPackageTypePrefix(transportPkgUrl)) {
+                        componentPackageFile = downloadPackageFile(transportPkgUrl);
+                    } else {
+                        try {
+                            componentPackageFile = FunctionCommon.extractFileFromPkgURL(transportPkgUrl);
+                        } catch (Exception e) {
+                            throw new IllegalArgumentException(String.format("Encountered error \"%s\" when getting %s package from %s", e.getMessage(), ComponentTypeUtils.toString(componentType), transportPkgUrl));
+                        }
                     }
                     functionDetails = validateUpdateRequestParams(tenant, namespace, transportName,
                             mergedConfig, componentPackageFile);
-
                 } else if (existingComponent.getPackageLocation().getPackagePath().startsWith(Utils.FILE)
                         || existingComponent.getPackageLocation().getPackagePath().startsWith(Utils.HTTP)) {
                     try {
@@ -445,13 +450,8 @@ public class TransportsImpl extends ComponentImpl implements Transports<PulsarWo
             String archive = transportConfig.getArchive();
             if (archive.startsWith(org.apache.pulsar.common.functions.Utils.BUILTIN)) {
                 archive = archive.replaceFirst("^builtin://", "");
+                classLoader = this.worker().getConnectorsManager().getConnector(archive).getClassLoader();
             }
-            Connector connector = worker().getConnectorsManager().getConnector(archive);
-            // check if builtin connector exists
-            if (connector == null) {
-                throw new IllegalArgumentException("Built-in transport is not available");
-            }
-            classLoader = connector.getClassLoader();
         }
 
         // if transport is not builtin, attempt to extract classloader from package file if it exists
@@ -760,5 +760,9 @@ public class TransportsImpl extends ComponentImpl implements Transports<PulsarWo
             throw new RestException(Response.Status.NOT_FOUND, "builtin sink does not exist");
         }
         return retval;
+    }
+
+    private File downloadPackageFile(String packageName) throws IOException, PulsarAdminException {
+        return FunctionsImpl.downloadPackageFile(worker(), packageName);
     }
 }

@@ -71,39 +71,39 @@ public class TransportConfigUtils {
         return functionDetailsBuilder.build();
     }
 
-    public static FunctionDetails.Builder convertFunctionDetailsBuilder(TransportConfig functionConfig, ExtractedTransportDetails functionDetails) {
-        boolean isBuiltin = !org.apache.commons.lang3.StringUtils.isEmpty(functionConfig.getJar()) && functionConfig.getJar().startsWith(org.apache.pulsar.common.functions.Utils.BUILTIN);
+    public static FunctionDetails.Builder convertFunctionDetailsBuilder(TransportConfig transportConfig, ExtractedTransportDetails functionDetails) {
+        boolean isBuiltin = !org.apache.commons.lang3.StringUtils.isEmpty(transportConfig.getArchive()) && transportConfig.getArchive().startsWith(org.apache.pulsar.common.functions.Utils.BUILTIN);
         FunctionDetails.Builder functionDetailsBuilder = FunctionDetails.newBuilder();
-        if (functionConfig.getTenant() != null) {
-            functionDetailsBuilder.setTenant(functionConfig.getTenant());
+        if (transportConfig.getTenant() != null) {
+            functionDetailsBuilder.setTenant(transportConfig.getTenant());
         }
-        if (functionConfig.getNamespace() != null) {
-            functionDetailsBuilder.setNamespace(functionConfig.getNamespace());
+        if (transportConfig.getNamespace() != null) {
+            functionDetailsBuilder.setNamespace(transportConfig.getNamespace());
         }
-        if (functionConfig.getName() != null) {
-            functionDetailsBuilder.setName(functionConfig.getName());
+        if (transportConfig.getName() != null) {
+            functionDetailsBuilder.setName(transportConfig.getName());
         }
-        if (functionConfig.getLogTopic() != null) {
-            functionDetailsBuilder.setLogTopic(functionConfig.getLogTopic());
+        if (transportConfig.getLogTopic() != null) {
+            functionDetailsBuilder.setLogTopic(transportConfig.getLogTopic());
         }
-        if (functionConfig.getRuntime() != null) {
-            functionDetailsBuilder.setRuntime(FunctionCommon.convertRuntime(functionConfig.getRuntime()));
+        if (transportConfig.getRuntime() != null) {
+            functionDetailsBuilder.setRuntime(FunctionCommon.convertRuntime(transportConfig.getRuntime()));
         }
-        if (functionConfig.getProcessingGuarantees() != null) {
+        if (transportConfig.getProcessingGuarantees() != null) {
             functionDetailsBuilder.setProcessingGuarantees(
-                    FunctionCommon.convertProcessingGuarantee(functionConfig.getProcessingGuarantees()));
+                    FunctionCommon.convertProcessingGuarantee(transportConfig.getProcessingGuarantees()));
         }
 
 
         Map<String, Object> configs = new HashMap<>();
-        if (functionConfig.getUserConfig() != null) {
-            configs.putAll(functionConfig.getUserConfig());
+        if (transportConfig.getUserConfig() != null) {
+            configs.putAll(transportConfig.getUserConfig());
         }
 
         // windowing related
-        WindowConfig windowConfig = functionConfig.getWindowConfig();
+        WindowConfig windowConfig = transportConfig.getWindowConfig();
         if (windowConfig != null) {
-            windowConfig.setActualWindowFunctionClassName(functionConfig.getFunctionClassName());
+            windowConfig.setActualWindowFunctionClassName(transportConfig.getFunctionClassName());
             configs.put(WindowConfig.WINDOW_CONFIG_KEY, windowConfig);
             // set class name to window function executor
             functionDetailsBuilder.setClassName("org.apache.pulsar.functions.windowing.WindowFunctionExecutor");
@@ -119,23 +119,23 @@ public class TransportConfigUtils {
             functionDetailsBuilder.setUserConfig(new Gson().toJson(configs));
         }
 
-        if (functionConfig.getSecrets() != null && !functionConfig.getSecrets().isEmpty()) {
-            functionDetailsBuilder.setSecretsMap(new Gson().toJson(functionConfig.getSecrets()));
+        if (transportConfig.getSecrets() != null && !transportConfig.getSecrets().isEmpty()) {
+            functionDetailsBuilder.setSecretsMap(new Gson().toJson(transportConfig.getSecrets()));
         }
 
-        if (functionConfig.getAutoAck() != null) {
-            functionDetailsBuilder.setAutoAck(functionConfig.getAutoAck());
+        if (transportConfig.getAutoAck() != null) {
+            functionDetailsBuilder.setAutoAck(transportConfig.getAutoAck());
         } else {
             functionDetailsBuilder.setAutoAck(true);
         }
-        if (functionConfig.getParallelism() != null) {
-            functionDetailsBuilder.setParallelism(functionConfig.getParallelism());
+        if (transportConfig.getParallelism() != null) {
+            functionDetailsBuilder.setParallelism(transportConfig.getParallelism());
         } else {
             functionDetailsBuilder.setParallelism(1);
         }
 
         // use default resources if resources not set
-        Resources resources = Resources.mergeWithDefault(functionConfig.getResources());
+        Resources resources = Resources.mergeWithDefault(transportConfig.getResources());
 
         Function.Resources.Builder bldr = Function.Resources.newBuilder();
         bldr.setCpu(resources.getCpu());
@@ -143,26 +143,26 @@ public class TransportConfigUtils {
         bldr.setDisk(resources.getDisk());
         functionDetailsBuilder.setResources(bldr);
 
-        if (!StringUtils.isEmpty(functionConfig.getRuntimeFlags())) {
-            functionDetailsBuilder.setRuntimeFlags(functionConfig.getRuntimeFlags());
+        if (!StringUtils.isEmpty(transportConfig.getRuntimeFlags())) {
+            functionDetailsBuilder.setRuntimeFlags(transportConfig.getRuntimeFlags());
         }
 
         functionDetailsBuilder.setComponentType(ComponentType.TRANSPORT);
 
-        if (!StringUtils.isEmpty(functionConfig.getCustomRuntimeOptions())) {
-            functionDetailsBuilder.setCustomRuntimeOptions(functionConfig.getCustomRuntimeOptions());
+        if (!StringUtils.isEmpty(transportConfig.getCustomRuntimeOptions())) {
+            functionDetailsBuilder.setCustomRuntimeOptions(transportConfig.getCustomRuntimeOptions());
         }
 
         if (isBuiltin) {
-            String builtin = functionConfig.getJar().replaceFirst("^builtin://", "");
+            String builtin = transportConfig.getArchive().replaceFirst("^builtin://", "");
             functionDetailsBuilder.setBuiltin(builtin);
         }
 
         return functionDetailsBuilder;
     }
 
-    public static Function.SinkSpec.Builder convertSinkSpecBuilder(TransportConfig sinkConfig, ExtractedTransportDetails sinkDetails) {
-        boolean isBuiltin = !org.apache.commons.lang3.StringUtils.isEmpty(sinkConfig.getArchive()) && sinkConfig.getArchive().startsWith(org.apache.pulsar.common.functions.Utils.BUILTIN);
+    public static Function.SinkSpec.Builder convertSinkSpecBuilder(TransportConfig transportConfig, ExtractedTransportDetails sinkDetails) {
+        boolean isBuiltin = !org.apache.commons.lang3.StringUtils.isEmpty(transportConfig.getArchive()) && transportConfig.getArchive().startsWith(org.apache.pulsar.common.functions.Utils.BUILTIN);
 
         // set up sink spec
         Function.SinkSpec.Builder sinkSpecBuilder = Function.SinkSpec.newBuilder();
@@ -172,12 +172,12 @@ public class TransportConfigUtils {
         }
 
         if (isBuiltin) {
-            String builtin = sinkConfig.getArchive().replaceFirst("^builtin://", "");
+            String builtin = transportConfig.getArchive().replaceFirst("^builtin://", "");
             sinkSpecBuilder.setBuiltin(builtin);
         }
 
-        if (sinkConfig.getConfigs() != null) {
-            sinkSpecBuilder.setConfigs(new Gson().toJson(sinkConfig.getConfigs()));
+        if (transportConfig.getConfigs() != null) {
+            sinkSpecBuilder.setConfigs(new Gson().toJson(transportConfig.getConfigs()));
         }
 
         if (sinkDetails.getSinkTypeArg() != null) {
@@ -187,8 +187,8 @@ public class TransportConfigUtils {
         return sinkSpecBuilder;
     }
 
-    public static Function.SourceSpec.Builder convertSourceSpecBuilder(TransportConfig sourceConfig, ExtractedTransportDetails sourceDetails) {
-        boolean isBuiltin = !StringUtils.isEmpty(sourceConfig.getArchive()) && sourceConfig.getArchive().startsWith(org.apache.pulsar.common.functions.Utils.BUILTIN);
+    public static Function.SourceSpec.Builder convertSourceSpecBuilder(TransportConfig transportConfig, ExtractedTransportDetails sourceDetails) {
+        boolean isBuiltin = !StringUtils.isEmpty(transportConfig.getArchive()) && transportConfig.getArchive().startsWith(org.apache.pulsar.common.functions.Utils.BUILTIN);
 
         // set source spec
         Function.SourceSpec.Builder sourceSpecBuilder = Function.SourceSpec.newBuilder();
@@ -197,12 +197,12 @@ public class TransportConfigUtils {
         }
 
         if (isBuiltin) {
-            String builtin = sourceConfig.getArchive().replaceFirst("^builtin://", "");
+            String builtin = transportConfig.getArchive().replaceFirst("^builtin://", "");
             sourceSpecBuilder.setBuiltin(builtin);
         }
 
-        if (sourceConfig.getConfigs() != null) {
-            sourceSpecBuilder.setConfigs(new Gson().toJson(sourceConfig.getConfigs()));
+        if (transportConfig.getConfigs() != null) {
+            sourceSpecBuilder.setConfigs(new Gson().toJson(transportConfig.getConfigs()));
         }
 
 
@@ -452,10 +452,6 @@ public class TransportConfigUtils {
         }
         if (!StringUtils.isEmpty(newConfig.getFunctionClassName())) {
             mergedConfig.setFunctionClassName(newConfig.getFunctionClassName());
-        }
-
-        if (!StringUtils.isEmpty(newConfig.getJar())) {
-            mergedConfig.setJar(newConfig.getJar());
         }
 
         if (newConfig.getConfigs() != null) {

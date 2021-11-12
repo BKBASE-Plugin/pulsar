@@ -259,32 +259,12 @@ public class CmdTransports extends CmdBase {
 
     abstract class TransportDetailsCommand extends BaseCommand {
 
-        @Parameter(names = "--fqfn", description = "The Fully Qualified Function Name (FQFN) for the function")
-        protected String fqfn;
-
         @Parameter(names = "--tenant", description = "The transport's tenant")
         protected String tenant;
         @Parameter(names = "--namespace", description = "The transport's namespace")
         protected String namespace;
         @Parameter(names = "--name", description = "The transport's name")
         protected String name;
-
-        @Parameter(names = "--jar", description = "Path to the JAR file for the function (if the function is written "
-                + "in Java). It also supports URL path [http/https/file (file protocol assumes that file already "
-                + "exists on worker host)] from which worker can download the package.", listConverter =
-                StringConverter.class)
-        protected String jarFile;
-        @Parameter(
-                names = "--py",
-                description = "Path to the main Python file/Python Wheel file for the function (if the function is "
-                        + "written in Python)",
-                listConverter = StringConverter.class)
-        protected String pyFile;
-        @Parameter(
-                names = "--go",
-                description = "Path to the main Go executable binary for the function (if the function is written in "
-                        + "Go)")
-        protected String goFile;
 
         @Parameter(names = {"-t", "--transport-type"}, description = "The transport's connector provider")
         protected String transportType;
@@ -399,18 +379,14 @@ public class CmdTransports extends CmdBase {
                 this.transportConfig = new TransportConfig();
             }
 
-            if (null != fqfn) {
-                parseFullyQualifiedFunctionName(fqfn, transportConfig);
-            } else {
-                if (null != tenant) {
-                    transportConfig.setTenant(tenant);
-                }
-                if (null != namespace) {
-                    transportConfig.setNamespace(namespace);
-                }
-                if (null != name) {
-                    transportConfig.setName(name);
-                }
+            if (null != tenant) {
+                transportConfig.setTenant(tenant);
+            }
+            if (null != namespace) {
+                transportConfig.setNamespace(namespace);
+            }
+            if (null != name) {
+                transportConfig.setName(name);
             }
 
             if (null != sinkClassName) {
@@ -488,18 +464,6 @@ public class CmdTransports extends CmdBase {
 
             if (customRuntimeOptions != null) {
                 transportConfig.setCustomRuntimeOptions(customRuntimeOptions);
-            }
-
-            if (null != jarFile) {
-                transportConfig.setJar(jarFile);
-            }
-
-            if (null != pyFile) {
-                transportConfig.setPy(pyFile);
-            }
-
-            if (null != goFile) {
-                transportConfig.setGo(goFile);
             }
 
             if (null != userConfigString) {
